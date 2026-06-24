@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+{% block title %}Configurações{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title"><i class="fa-solid fa-gear"></i> Configurações</h2>
+    <p class="page-subtitle">Usuários, controle de acesso e segurança</p>
+  </div>
+</div>
+
+<!-- STATS TOPO -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card stat-total">
+      <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+      <div class="stat-number">{{ stats.total_usuarios }}</div>
+      <div class="stat-label">Usuários</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card stat-andamento">
+      <div class="stat-icon"><i class="fa-solid fa-ticket-simple"></i></div>
+      <div class="stat-number">{{ stats.total_tickets }}</div>
+      <div class="stat-label">Total de Tickets</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card stat-aberto">
+      <div class="stat-icon"><i class="fa-solid fa-folder-open"></i></div>
+      <div class="stat-number">{{ stats.abertos }}</div>
+      <div class="stat-label">Tickets em Aberto</div>
+    </div>
+  </div>
+</div>
+
+<!-- ABAS -->
+<div class="cfg-tabs">
+  <a href="{{ url_for('configuracoes', tab='usuarios') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'usuarios' else '' }}">
+    <i class="fa-solid fa-users"></i> Usuários
+  </a>
+  <a href="{{ url_for('configuracoes', tab='ips') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'ips' else '' }}">
+    <i class="fa-solid fa-shield-halved"></i> IPs Permitidos
+  </a>
+  <a href="{{ url_for('configuracoes', tab='horarios') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'horarios' else '' }}">
+    <i class="fa-solid fa-clock"></i> Controle de Horários
+  </a>
+</div>
+
+<!-- MENSAGENS -->
+{% if msg == 'usuario_criado' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Usuário criado com sucesso!</div>
+{% elif msg == 'senha_alterada' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Senha alterada com sucesso!</div>
+{% elif msg == 'horarios_salvos' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Horários salvos com sucesso!</div>
+{% endif %}
+
+{% if err == 'usuario_existe' %}
+<div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Já existe um usuário com esse nome de login.</div>
+{% elif err == 'campos_obrigatorios' %}
+<div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Preencha todos os campos obrigatórios.</div>
+{% endif %}
+
+<!-- ════════════════════════════════════ -->
+<!-- ABA: USUÁRIOS                        -->
+<!-- ════════════════════════════════════ -->
+{% if tab == 'usuarios' %}
+<div class="row g-3">
+
+  <!-- LISTA -->
+  <div class="col-lg-7">
+    <div class="card-panel p-0">
+      <div class="card-panel-header" style="padding:16px 20px;">
+        <h5><i class="fa-solid fa-list"></i> Usuários Cadastrados</h5>
+        <span class="badge-status badge-aberto">{{ users | length }} usuário(s)</span>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nome / Login</th>
+              <th>Perfil</th>
+              <th>Status</th>
+              <th style="width:130px">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar-sm">{{ u.name[0] | upper }}</div>
+                  <div>
+                    <div class="fw-semibold">{{ u.name }}</div>
+                    <code class="code-tag">{{ u.username }}</code>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="badge-perfil badge-{{ u.role }}">{{ get_role_label(u.role) }}</span>
+              </td>
+              <td>
+                {% if u.get('ativo', True) %}
+                <span class="badge-status badge-resolvido">Ativo</span>
+                {% else %}
+                <span class="badge-status badge-fechado">Inativo</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="action-btns">
+                  {% if u.id != session.user_id %}
+                  <form method="POST" action="{{ url_for('cfg_toggle_usuario', user_id=u.id) }}" style="display:inline">
+                    <button type="submit"
+                            class="btn-acao {{ 'btn-danger-sm' if u.get('ativo', True) else 'btn-success-sm' }}"
+                            title="{{ 'Desativar' if u.get('ativo', True) else 'Ativar' }}">
+                      <i class="fa-solid fa-{{ 'ban' if u.get('ativo', True) else 'check' }}"></i>
+                    </button>
+                  </form>
+                  <button type="button" class="btn-acao" title="Alterar senha"
+                          onclick="abrirModalSenha('{{ u.id }}', '{{ u.name }}')">
+                    <i class="fa-solid fa-key"></i>
+                  </button>
+                  {% else %}
+                  <span class="text-muted" style="font-size:12px">(você)</span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRIAR USUÁRIO -->
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-user-plus"></i> Criar Novo Usuário</h5>
+      </div>
+      <form method="POST" action="{{ url_for('cfg_criar_usuario') }}">
+        <div class="form-group">
+          <label class="form-lbl">Nome completo <span class="req">*</span></label>
+          <input type="text" name="name" class="form-inp"
+                 placeholder="Ex.: João da Silva" required maxlength="80" />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Usuário (login) <span class="req">*</span></label>
+          <input type="text" name="username" class="form-inp"
+                 placeholder="Ex.: joao.silva" required
+                 pattern="[a-zA-Z0-9._-]+"
+                 title="Apenas letras, números, ponto, hífen ou underscore" />
+          <small class="text-muted" style="font-size:12px">Sem espaços ou caracteres especiais</small>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Senha <span class="req">*</span></label>
+          <div style="position:relative">
+            <input type="password" name="password" id="novaSenha" class="form-inp"
+                   placeholder="Mínimo 4 caracteres" required minlength="4"
+                   style="padding-right:44px" />
+            <button type="button" class="btn-eye" onclick="toggleSenha('novaSenha', this)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">E-mail</label>
+          <input type="email" name="email" class="form-inp" placeholder="email@empresa.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Perfil de Acesso <span class="req">*</span></label>
+          <select name="role" class="form-inp form-sel" required>
+            <option value="funcionario">Funcionário — somente abertura de tickets</option>
+            <option value="supervisor">Supervisor — acompanhamento e atualização de status</option>
+            <option value="admin">Administrador — acesso total ao sistema</option>
+          </select>
+        </div>
+        <div class="info-box mb-3">
+          <i class="fa-solid fa-circle-info"></i>
+          <div>
+            <strong>Perfis disponíveis:</strong><br>
+            <strong>Funcionário</strong> abre tickets · <strong>Supervisor</strong> acompanha e atualiza status ·
+            <strong>Administrador</strong> tem acesso total, incluindo configurações
+          </div>
+        </div>
+        <button type="submit" class="btn-submit w-100">
+          <i class="fa-solid fa-user-plus"></i> Criar Usuário
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════ -->
+<!-- ABA: IPs PERMITIDOS                  -->
+<!-- ════════════════════════════════════ -->
+{% elif tab == 'ips' %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-network-wired"></i> Lista de IPs Permitidos</h5>
+        <span class="badge-status {{ 'badge-resolvido' if cfg.ip_control.enabled else 'badge-fechado' }}">
+          {{ 'Ativo' if cfg.ip_control.enabled else 'Desativado' }}
+        </span>
+      </div>
+
+      <!-- Aviso -->
+      <div class="alert-msg {{ 'alert-success' if cfg.ip_control.enabled else 'alert-info' }} mb-3">
+        <i class="fa-solid fa-{{ 'shield-halved' if cfg.ip_control.enabled else 'circle-info' }}"></i>
+        <div>
+          {% if cfg.ip_control.enabled %}
+            <strong>Controle ativo.</strong> Apenas os IPs listados abaixo podem acessar o sistema.
+          {% else %}
+            <strong>Controle desativado.</strong> Qualquer IP pode acessar. Ative para restringir o acesso.
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Seu IP atual -->
+      <div class="ip-current-box mb-3">
+        <i class="fa-solid fa-location-dot"></i>
+        <div>
+          <strong>Seu IP atual:</strong> <code class="code-tag">{{ current_ip }}</code>
+          {% if current_ip not in cfg.ip_control.ips %}
+          <span class="badge-status badge-em-andamento" style="font-size:11px; margin-left:6px">Não está na lista</span>
+          {% else %}
+          <span class="badge-status badge-resolvido" style="font-size:11px; margin-left:6px">Na lista</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- IPs cadastrados -->
+      {% if cfg.ip_control.ips %}
+      <div class="ip-list">
+        {% for ip in cfg.ip_control.ips %}
+        <div class="ip-item">
+          <div style="display:flex; align-items:center; gap:10px">
+            <i class="fa-solid fa-circle-dot" style="color:var(--green); font-size:10px"></i>
+            <code style="font-size:14px; font-weight:600">{{ ip }}</code>
+            {% if ip == current_ip %}
+            <span class="badge-status badge-aberto" style="font-size:10px">Você</span>
+            {% endif %}
+          </div>
+          <form method="POST" action="{{ url_for('cfg_ip_remover') }}" style="display:inline"
+                onsubmit="return confirm('Remover o IP {{ ip }}?')">
+            <input type="hidden" name="ip" value="{{ ip }}" />
+            <button type="submit" class="btn-acao btn-danger-sm" title="Remover IP">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:24px">
+        <i class="fa-solid fa-list" style="font-size:28px"></i>
+        <p style="font-size:14px">Nenhum IP cadastrado</p>
+      </div>
+      {% endif %}
+
+      <!-- Adicionar IP -->
+      <form method="POST" action="{{ url_for('cfg_ip_adicionar') }}" class="ip-add-form mt-3">
+        <input type="text" name="ip" class="form-inp-sm"
+               placeholder="Ex.: 192.168.0.10  ou  10.0.0.5"
+               pattern="^(\d{1,3}\.){3}\d{1,3}$|^::1$|^[0-9a-fA-F:]+$"
+               title="Digite um endereço IP válido" required
+               style="flex:1" />
+        <button type="submit" class="btn-submit">
+          <i class="fa-solid fa-plus"></i> Adicionar
+        </button>
+      </form>
+      <!-- Botão rápido: adicionar IP atual -->
+      {% if current_ip not in cfg.ip_control.ips %}
+      <form method="POST" action="{{ url_for('cfg_ip_adicionar') }}" class="mt-2">
+        <input type="hidden" name="ip" value="{{ current_ip }}" />
+        <button type="submit" class="btn-cancel w-100" style="justify-content:center">
+          <i class="fa-solid fa-plus"></i> Adicionar meu IP atual ({{ current_ip }})
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Painel de controle -->
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-toggle-on"></i> Ativar / Desativar</h5>
+      </div>
+      <div class="toggle-big {{ 'toggle-on' if cfg.ip_control.enabled else 'toggle-off' }}">
+        <div class="toggle-info">
+          <div class="toggle-title">Controle por IP</div>
+          <div class="toggle-desc">
+            {{ 'Ativo — somente IPs da lista podem acessar' if cfg.ip_control.enabled
+               else 'Inativo — todos os IPs podem acessar' }}
+          </div>
+        </div>
+        <form method="POST" action="{{ url_for('cfg_ip_toggle') }}">
+          <button type="submit" class="btn-toggle-switch {{ 'on' if cfg.ip_control.enabled else 'off' }}">
+            <span>{{ 'ON' if cfg.ip_control.enabled else 'OFF' }}</span>
+          </button>
+        </form>
+      </div>
+      {% if cfg.ip_control.enabled %}
+      <div class="alert-msg alert-error mt-3" style="font-size:13px">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <div>
+          <strong>Atenção:</strong> Certifique-se de que seu IP (<code>{{ current_ip }}</code>)
+          está na lista antes de sair. Caso contrário, você perderá o acesso.
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card-panel mt-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-circle-question"></i> Como funciona</h5>
+      </div>
+      <div style="font-size:13px; color:var(--text-secondary); line-height:1.7">
+        <p><i class="fa-solid fa-check" style="color:var(--green)"></i> &nbsp;Quando <strong>ativo</strong>, somente os IPs cadastrados nesta lista podem acessar o sistema.</p>
+        <p class="mt-2"><i class="fa-solid fa-xmark" style="color:var(--red)"></i> &nbsp;Qualquer acesso de IP não listado é bloqueado imediatamente, mesmo que o usuário tenha login e senha válidos.</p>
+        <p class="mt-2"><i class="fa-solid fa-info" style="color:var(--blue)"></i> &nbsp;O IP <code>127.0.0.1</code> (localhost) já vem pré-cadastrado por padrão.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════ -->
+<!-- ABA: CONTROLE DE HORÁRIOS            -->
+<!-- ════════════════════════════════════ -->
+{% elif tab == 'horarios' %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-calendar-days"></i> Horários de Acesso por Dia da Semana</h5>
+        <span class="badge-status {{ 'badge-resolvido' if cfg.horario_control.enabled else 'badge-fechado' }}">
+          {{ 'Ativo' if cfg.horario_control.enabled else 'Desativado' }}
+        </span>
+      </div>
+
+      <div class="info-box mb-3">
+        <i class="fa-solid fa-clock"></i>
+        <div>
+          Todos os horários são baseados no <strong>Horário de Brasília (UTC-3)</strong>.
+          Quando o controle está ativo, usuários só podem acessar dentro das janelas configuradas.
+        </div>
+      </div>
+
+      <form method="POST" action="{{ url_for('cfg_horario_atualizar') }}">
+        <div class="horario-table">
+          <div class="horario-header">
+            <div>Dia da Semana</div>
+            <div>Hora Início</div>
+            <div>Hora Fim</div>
+            <div>Permitir Acesso</div>
+          </div>
+          {% for h in cfg.horario_control.horarios %}
+          <div class="horario-row {{ 'horario-ativo' if h.ativo else 'horario-inativo' }}">
+            <div class="dia-nome">
+              <span class="dia-icone">
+                {% if h.dia in [5, 6] %}<i class="fa-solid fa-umbrella-beach"></i>
+                {% else %}<i class="fa-solid fa-briefcase"></i>{% endif %}
+              </span>
+              {{ h.nome }}
+            </div>
+            <div>
+              <input type="time" name="inicio_{{ h.dia }}" value="{{ h.inicio }}"
+                     class="form-inp-sm time-inp {{ '' if h.ativo else 'inp-disabled' }}"
+                     {{ 'disabled' if not h.ativo else '' }} />
+            </div>
+            <div>
+              <input type="time" name="fim_{{ h.dia }}" value="{{ h.fim }}"
+                     class="form-inp-sm time-inp {{ '' if h.ativo else 'inp-disabled' }}"
+                     {{ 'disabled' if not h.ativo else '' }} />
+            </div>
+            <div style="text-align:center">
+              <label class="switch-label">
+                <input type="checkbox" name="ativo_{{ h.dia }}"
+                       {{ 'checked' if h.ativo else '' }}
+                       onchange="toggleDia(this, {{ h.dia }})" />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="mt-3 text-end">
+          <button type="submit" class="btn-submit">
+            <i class="fa-solid fa-floppy-disk"></i> Salvar Horários
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-toggle-on"></i> Ativar / Desativar</h5>
+      </div>
+      <div class="toggle-big {{ 'toggle-on' if cfg.horario_control.enabled else 'toggle-off' }}">
+        <div class="toggle-info">
+          <div class="toggle-title">Controle de Horário</div>
+          <div class="toggle-desc">
+            {{ 'Ativo — acesso restrito aos horários configurados' if cfg.horario_control.enabled
+               else 'Inativo — acesso liberado 24h/7 dias' }}
+          </div>
+        </div>
+        <form method="POST" action="{{ url_for('cfg_horario_toggle') }}">
+          <button type="submit" class="btn-toggle-switch {{ 'on' if cfg.horario_control.enabled else 'off' }}">
+            <span>{{ 'ON' if cfg.horario_control.enabled else 'OFF' }}</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card-panel mt-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-clock"></i> Horário Atual</h5>
+      </div>
+      <div style="text-align:center; padding:8px 0">
+        <div id="relogio-cfg" style="font-size:28px; font-weight:800; color:var(--blue); font-family:monospace"></div>
+        <div id="data-cfg" style="font-size:13px; color:var(--text-secondary); margin-top:4px"></div>
+        <div id="dia-cfg" style="font-size:13px; font-weight:600; color:var(--text-primary); margin-top:4px"></div>
+      </div>
+    </div>
+
+    <div class="card-panel mt-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-circle-question"></i> Como funciona</h5>
+      </div>
+      <div style="font-size:13px; color:var(--text-secondary); line-height:1.7">
+        <p>Quando <strong>ativado</strong>, usuários que tentarem acessar o sistema fora do horário configurado para aquele dia verão uma tela de acesso negado.</p>
+        <p class="mt-2">Dias com o toggle <strong>desligado</strong> (ex.: Domingo) <strong>bloqueiam totalmente</strong> o acesso naquele dia.</p>
+        <p class="mt-2">Horário de Brasília é aplicado independente do fuso horário do usuário.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- MODAL ALTERAR SENHA -->
+<div class="modal fade" id="modalSenha" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="border-radius:16px; border:none; overflow:hidden">
+      <div class="modal-header" style="background:#1e293b; color:white; border:none">
+        <h6 class="modal-title"><i class="fa-solid fa-key"></i> Alterar Senha</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="formSenha">
+        <div class="modal-body">
+          <p class="text-muted small mb-3" id="modalUserName"></p>
+          <div class="form-group">
+            <label class="form-lbl-sm">Nova senha</label>
+            <div style="position:relative">
+              <input type="password" name="nova_senha" id="senhaModal" class="form-inp-sm"
+                     required minlength="4" placeholder="Mínimo 4 caracteres"
+                     style="padding-right:40px" />
+              <button type="button" class="btn-eye btn-eye-sm" onclick="toggleSenha('senhaModal', this)">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border:none">
+          <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn-submit">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function abrirModalSenha(userId, userName) {
+    document.getElementById('modalUserName').textContent = 'Usuário: ' + userName;
+    document.getElementById('formSenha').action = '/configuracoes/usuario/' + userId + '/senha';
+    new bootstrap.Modal(document.getElementById('modalSenha')).show();
+  }
+
+  function toggleSenha(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      icon.className = 'fa-solid fa-eye-slash';
+    } else {
+      inp.type = 'password';
+      icon.className = 'fa-solid fa-eye';
+    }
+  }
+
+  function toggleDia(cb, dia) {
+    const row   = cb.closest('.horario-row');
+    const inps  = row.querySelectorAll('input[type="time"]');
+    if (cb.checked) {
+      row.classList.remove('horario-inativo');
+      row.classList.add('horario-ativo');
+      inps.forEach(i => { i.disabled = false; i.classList.remove('inp-disabled'); });
+    } else {
+      row.classList.remove('horario-ativo');
+      row.classList.add('horario-inativo');
+      inps.forEach(i => { i.disabled = true; i.classList.add('inp-disabled'); });
+    }
+  }
+
+  // Relógio local na aba de horários
+  function atualizarRelogioCfg() {
+    const rel  = document.getElementById('relogio-cfg');
+    const dat  = document.getElementById('data-cfg');
+    const dia  = document.getElementById('dia-cfg');
+    if (!rel) return;
+    const now  = new Date();
+    const opts = { timeZone: 'America/Sao_Paulo' };
+    const dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+    const hora = new Intl.DateTimeFormat('pt-BR', { ...opts, hour:'2-digit', minute:'2-digit', second:'2-digit' }).format(now);
+    const data = new Intl.DateTimeFormat('pt-BR', { ...opts, day:'2-digit', month:'2-digit', year:'numeric' }).format(now);
+    const diaN = dias[new Intl.DateTimeFormat('pt-BR', { ...opts, weekday:'narrow' }).formatToParts(now)
+                        .find(p => p.type === 'weekday') ? new Date(now.toLocaleString('en-US', opts)).getDay() : now.getDay()];
+    rel.textContent = hora;
+    dat.textContent = data;
+    dia.textContent = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
+                        .toLocaleDateString('pt-BR', { weekday: 'long' });
+  }
+  atualizarRelogioCfg();
+  setInterval(atualizarRelogioCfg, 1000);
+</script>
+{% endblock %}

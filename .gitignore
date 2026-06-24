@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Uploads dos usuários (arquivos de tickets)
+uploads/*
+!uploads/.gitkeep
+
+# Dados locais (gerados na primeira execução)
+data/users.json
+data/tickets.json
+data/config.json
+
+# Manter estrutura da pasta data
+!data/.gitkeep
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+.env

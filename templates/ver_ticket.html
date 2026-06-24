@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}{{ ticket.numero }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <h2 class="page-title mb-0">
+        <i class="fa-solid fa-ticket-simple"></i> {{ ticket.numero }}
+      </h2>
+      <span class="badge-status badge-{{ ticket.status | lower | replace(' ', '-') }}" style="font-size:14px; padding:6px 14px;">
+        {{ ticket.status }}
+      </span>
+    </div>
+    <p class="page-subtitle mt-1">{{ ticket.nome }}</p>
+  </div>
+  <a href="{{ url_for('acompanhamento') }}" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Voltar
+  </a>
+</div>
+
+<div class="row g-3">
+  <!-- COLUNA PRINCIPAL -->
+  <div class="col-lg-8">
+
+    <!-- DETALHES DO TICKET -->
+    <div class="card-panel mb-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-file-lines"></i> Detalhes do Ticket</h5>
+      </div>
+      <div class="ticket-detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Número</span>
+          <span class="detail-value ticket-num">{{ ticket.numero }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Sistema</span>
+          <span class="badge-sistema badge-{{ ticket.sistema | lower | replace(' ', '-') | replace('(', '') | replace(')', '') }}">
+            {{ ticket.sistema }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Aberto por</span>
+          <span class="detail-value">{{ ticket.criado_por }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Data/Hora de Criação</span>
+          <span class="detail-value">{{ ticket.data_formatada }} <small class="text-muted">(Horário de Brasília)</small></span>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <span class="detail-label">Descrição da Ocorrência</span>
+        <div class="ocorrencia-box">{{ ticket.ocorrencia }}</div>
+      </div>
+
+      <!-- ANEXO -->
+      {% if ticket.arquivo %}
+      <div class="mt-3">
+        <span class="detail-label">
+          <i class="fa-solid fa-paperclip"></i> Anexo
+        </span>
+        <div class="anexo-box">
+          {% if ticket.arquivo.tipo == 'video' %}
+          <video controls class="anexo-media">
+            <source src="{{ url_for('uploaded_file', filename=ticket.arquivo.filename) }}" />
+            Seu navegador não suporta vídeo.
+          </video>
+          {% else %}
+          <a href="{{ url_for('uploaded_file', filename=ticket.arquivo.filename) }}" target="_blank">
+            <img src="{{ url_for('uploaded_file', filename=ticket.arquivo.filename) }}"
+                 class="anexo-media" alt="Anexo do ticket" />
+          </a>
+          {% endif %}
+          <div class="anexo-name">
+            <i class="fa-solid fa-{{ 'video' if ticket.arquivo.tipo == 'video' else 'image' }}"></i>
+            {{ ticket.arquivo.original_name }}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="card-panel mb-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Atualizações</h5>
+      </div>
+      <div class="timeline">
+        {% for h in ticket.historico | reverse %}
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-acao">{{ h.acao }}</div>
+            <div class="timeline-meta">
+              <i class="fa-solid fa-user"></i> {{ h.por }}
+              &nbsp;·&nbsp;
+              <i class="fa-solid fa-clock"></i> {{ h.data }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- COMENTÁRIO -->
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-comment"></i> Adicionar Comentário</h5>
+      </div>
+      <form method="POST" action="{{ url_for('comentar_ticket', ticket_id=ticket.id) }}">
+        <textarea name="comentario" class="form-inp form-textarea" rows="3"
+                  placeholder="Escreva um comentário ou atualização..."></textarea>
+        <div class="mt-2 text-end">
+          <button type="submit" class="btn-submit">
+            <i class="fa-solid fa-paper-plane"></i> Enviar Comentário
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- COLUNA LATERAL -->
+  <div class="col-lg-4">
+
+    <!-- ATUALIZAR STATUS (apenas admin e supervisor) -->
+    {% if session.role in ['admin', 'supervisor'] %}
+    <div class="card-panel mb-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-pen-to-square"></i> Atualizar Status</h5>
+      </div>
+      <form method="POST" action="{{ url_for('atualizar_ticket', ticket_id=ticket.id) }}">
+        <div class="form-group">
+          <label class="form-lbl-sm">Novo Status</label>
+          <select name="status" class="form-inp-sm form-sel-sm w-100" required>
+            {% for s in status_list %}
+            <option value="{{ s }}" {{ 'selected' if ticket.status == s }}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl-sm">Observação (opcional)</label>
+          <textarea name="comentario" class="form-inp-sm" rows="2"
+                    placeholder="Motivo da atualização..."></textarea>
+        </div>
+        <button type="submit" class="btn-submit w-100">
+          <i class="fa-solid fa-check"></i> Atualizar
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- RESUMO -->
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-circle-info"></i> Resumo</h5>
+      </div>
+      <div class="resumo-list">
+        <div class="resumo-item">
+          <span class="resumo-label">Status atual</span>
+          <span class="badge-status badge-{{ ticket.status | lower | replace(' ', '-') }}">{{ ticket.status }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Sistema</span>
+          <span class="resumo-value">{{ ticket.sistema }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Criado em</span>
+          <span class="resumo-value">{{ ticket.data_formatada }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Responsável</span>
+          <span class="resumo-value">{{ ticket.criado_por }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Atualizações</span>
+          <span class="resumo-value">{{ ticket.historico | length }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Anexo</span>
+          <span class="resumo-value">{{ 'Sim' if ticket.arquivo else 'Não' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

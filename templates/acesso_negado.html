@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acesso Negado — Sistema Tickets</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f172a 0%, #7f1d1d 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 48px 40px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    }
+    .icon-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #fef2f2;
+      border: 3px solid #fecaca;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .icon-circle i { font-size: 36px; color: #dc2626; }
+    h1 { font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+    .subtitle { color: #64748b; font-size: 15px; margin-bottom: 24px; line-height: 1.6; }
+    .info-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #e2e8f0; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 13px; color: #64748b; font-weight: 500; }
+    .info-value { font-size: 13px; font-weight: 700; color: #0f172a; }
+    code { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 13px; }
+    .btn-voltar {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: #1d4ed8;
+      color: white;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      transition: all 0.15s;
+    }
+    .btn-voltar:hover { background: #1e40af; color: white; }
+    .motivo-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fee2e2;
+      color: #b91c1c;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-circle">
+      {% if motivo == 'ip' %}
+        <i class="fa-solid fa-shield-halved"></i>
+      {% elif motivo == 'horario' %}
+        <i class="fa-solid fa-clock"></i>
+      {% else %}
+        <i class="fa-solid fa-lock"></i>
+      {% endif %}
+    </div>
+
+    <span class="motivo-badge">
+      {% if motivo == 'ip' %}Bloqueio por IP{% elif motivo == 'horario' %}Fora do Horário{% else %}Acesso Negado{% endif %}
+    </span>
+
+    <h1>Acesso Negado</h1>
+
+    {% if motivo == 'ip' %}
+    <p class="subtitle">
+      Seu endereço IP não está autorizado a acessar este sistema.<br>
+      Entre em contato com o administrador para liberar seu acesso.
+    </p>
+    <div class="info-block">
+      <div class="info-row">
+        <span class="info-label">Seu IP</span>
+        <code>{{ ip }}</code>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Horário da tentativa</span>
+        <span class="info-value">{{ hora }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Motivo</span>
+        <span class="info-value">IP não autorizado</span>
+      </div>
+    </div>
+
+    {% elif motivo == 'horario' %}
+    <p class="subtitle">
+      O sistema não está disponível neste horário.<br>
+      Tente novamente dentro da janela de acesso configurada.
+    </p>
+    <div class="info-block">
+      <div class="info-row">
+        <span class="info-label">Horário atual</span>
+        <span class="info-value">{{ hora }}</span>
+      </div>
+      {% if nome_dia %}
+      <div class="info-row">
+        <span class="info-label">Dia</span>
+        <span class="info-value">{{ nome_dia }}</span>
+      </div>
+      {% endif %}
+      {% if inicio and fim %}
+      <div class="info-row">
+        <span class="info-label">Horário permitido</span>
+        <span class="info-value">{{ inicio }} às {{ fim }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    {% else %}
+    <p class="subtitle">Você não tem permissão para acessar este recurso.</p>
+    {% endif %}
+
+    <a href="/login" class="btn-voltar">
+      <i class="fa-solid fa-right-to-bracket"></i> Ir para o Login
+    </a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Meu Perfil{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-title"><i class="fa-solid fa-user-gear"></i> Meu Perfil</h2>
+  <p class="page-subtitle">Informações da sua conta</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+
+    <div class="card-panel mb-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-id-card"></i> Dados da Conta</h5>
+      </div>
+      <div class="perfil-header">
+        <div class="perfil-avatar">{{ user.name[0] | upper }}</div>
+        <div>
+          <div class="perfil-name">{{ user.name }}</div>
+          <span class="badge-perfil badge-{{ user.role }}">{{ get_role_label(user.role) }}</span>
+        </div>
+      </div>
+      <div class="resumo-list mt-3">
+        <div class="resumo-item">
+          <span class="resumo-label">Usuário (login)</span>
+          <code class="code-tag">{{ user.username }}</code>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">E-mail</span>
+          <span class="resumo-value">{{ user.email or '—' }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Perfil de acesso</span>
+          <span class="resumo-value">{{ get_role_label(user.role) }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Status</span>
+          <span class="badge-status badge-resolvido">Ativo</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-lock"></i> Alterar Senha</h5>
+      </div>
+
+      {% if success %}
+      <div class="alert-msg alert-success mb-3">
+        <i class="fa-solid fa-circle-check"></i> {{ success }}
+      </div>
+      {% endif %}
+      {% if error %}
+      <div class="alert-msg alert-error mb-3">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('meu_perfil') }}">
+        <div class="form-group">
+          <label class="form-lbl">Senha atual</label>
+          <input type="password" name="senha_atual" class="form-inp" required placeholder="Digite sua senha atual" />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Nova senha</label>
+          <input type="password" name="nova_senha" class="form-inp" required minlength="4" placeholder="Mínimo 4 caracteres" />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Confirmar nova senha</label>
+          <input type="password" name="confirmar_senha" class="form-inp" required minlength="4" placeholder="Repita a nova senha" />
+        </div>
+        <button type="submit" class="btn-submit">
+          <i class="fa-solid fa-floppy-disk"></i> Salvar Senha
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

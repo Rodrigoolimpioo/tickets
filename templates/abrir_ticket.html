@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Abrir Ticket{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-title"><i class="fa-solid fa-circle-plus"></i> Abrir Ticket</h2>
+  <p class="page-subtitle">Registre uma nova ocorrência</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card-panel">
+
+      {% if error %}
+      <div class="alert-msg alert-error mb-4">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('abrir_ticket') }}" enctype="multipart/form-data" id="formTicket">
+
+        <!-- NOME DO TICKET -->
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-tag"></i> Nome do Ticket <span class="req">*</span>
+          </label>
+          <input
+            type="text"
+            name="nome"
+            class="form-inp"
+            placeholder="Ex.: Erro no módulo de vendas"
+            maxlength="120"
+            required
+          />
+        </div>
+
+        <!-- SISTEMA -->
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-layer-group"></i> Sistema Afetado <span class="req">*</span>
+          </label>
+          <select name="sistema" class="form-inp form-sel" required>
+            <option value="">— Selecione o sistema —</option>
+            {% for s in sistemas %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- OCORRÊNCIA -->
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-file-lines"></i> Descrição da Ocorrência <span class="req">*</span>
+          </label>
+          <textarea
+            name="ocorrencia"
+            class="form-inp form-textarea"
+            placeholder="Descreva detalhadamente o problema encontrado..."
+            rows="5"
+            maxlength="2000"
+            required
+          ></textarea>
+          <div class="char-count"><span id="charCount">0</span>/2000</div>
+        </div>
+
+        <!-- UPLOAD -->
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-paperclip"></i> Anexo (foto ou vídeo) <span class="opcional">— opcional</span>
+          </label>
+          <div class="upload-area" id="uploadArea">
+            <input type="file" name="arquivo" id="fileInput" class="upload-input"
+                   accept="image/*,video/*,.mp4,.avi,.mov,.webm,.mkv" />
+            <div class="upload-placeholder" id="uploadPlaceholder">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <p>Arraste um arquivo ou <strong>clique para selecionar</strong></p>
+              <small>Imagens: PNG, JPG, GIF, WEBP &nbsp;|&nbsp; Vídeos: MP4, AVI, MOV, WEBM (máx. 100MB)</small>
+            </div>
+            <div class="upload-preview" id="uploadPreview" style="display:none;">
+              <img id="previewImg" src="" alt="" />
+              <video id="previewVideo" src="" controls style="display:none;"></video>
+              <div class="preview-info">
+                <span id="previewName"></span>
+                <button type="button" class="btn-remove-file" onclick="removeFile()">
+                  <i class="fa-solid fa-xmark"></i> Remover
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INFO AUTOMÁTICA -->
+        <div class="info-box">
+          <i class="fa-solid fa-circle-info"></i>
+          <div>
+            <strong>Informações automáticas:</strong> O número do ticket, a data/hora de criação (horário de Brasília)
+            e o responsável pela abertura serão registrados automaticamente.
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a href="{{ url_for('dashboard') }}" class="btn-cancel">
+            <i class="fa-solid fa-xmark"></i> Cancelar
+          </a>
+          <button type="submit" class="btn-submit" id="btnSubmit">
+            <i class="fa-solid fa-paper-plane"></i> Abrir Ticket
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Contador de caracteres
+  const textarea = document.querySelector('[name="ocorrencia"]');
+  const counter = document.getElementById('charCount');
+  textarea.addEventListener('input', () => {
+    counter.textContent = textarea.value.length;
+  });
+
+  // Upload preview
+  const fileInput = document.getElementById('fileInput');
+  const uploadArea = document.getElementById('uploadArea');
+  const placeholder = document.getElementById('uploadPlaceholder');
+  const preview = document.getElementById('uploadPreview');
+  const previewImg = document.getElementById('previewImg');
+  const previewVideo = document.getElementById('previewVideo');
+  const previewName = document.getElementById('previewName');
+
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('drag-over');
+  });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      showPreview(e.dataTransfer.files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) showPreview(fileInput.files[0]);
+  });
+
+  function showPreview(file) {
+    previewName.textContent = file.name;
+    placeholder.style.display = 'none';
+    preview.style.display = 'flex';
+    const url = URL.createObjectURL(file);
+    if (file.type.startsWith('video')) {
+      previewImg.style.display = 'none';
+      previewVideo.style.display = 'block';
+      previewVideo.src = url;
+    } else {
+      previewVideo.style.display = 'none';
+      previewImg.style.display = 'block';
+      previewImg.src = url;
+    }
+  }
+
+  function removeFile() {
+    fileInput.value = '';
+    previewImg.src = '';
+    previewVideo.src = '';
+    placeholder.style.display = 'flex';
+    preview.style.display = 'none';
+  }
+
+  // Submissão com loading
+  document.getElementById('formTicket').addEventListener('submit', function() {
+    const btn = document.getElementById('btnSubmit');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+    btn.disabled = true;
+  });
+</script>
+{% endblock %}

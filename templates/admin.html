@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Configurações{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-title"><i class="fa-solid fa-gear"></i> Configurações do Sistema</h2>
+  <p class="page-subtitle">Gerenciamento de usuários e parâmetros</p>
+</div>
+
+<!-- STATS ADMIN -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card stat-total">
+      <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+      <div class="stat-number">{{ stats.total_usuarios }}</div>
+      <div class="stat-label">Usuários Cadastrados</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card stat-andamento">
+      <div class="stat-icon"><i class="fa-solid fa-ticket-simple"></i></div>
+      <div class="stat-number">{{ stats.total_tickets }}</div>
+      <div class="stat-label">Total de Tickets</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card stat-aberto">
+      <div class="stat-icon"><i class="fa-solid fa-folder-open"></i></div>
+      <div class="stat-number">{{ stats.abertos }}</div>
+      <div class="stat-label">Tickets Abertos</div>
+    </div>
+  </div>
+</div>
+
+{% if request.args.get('error') == 'usuario_existe' %}
+<div class="alert-msg alert-error mb-3">
+  <i class="fa-solid fa-triangle-exclamation"></i> Já existe um usuário com esse nome de usuário.
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <!-- LISTA DE USUÁRIOS -->
+  <div class="col-lg-7">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-users"></i> Usuários do Sistema</h5>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Usuário</th>
+              <th>Perfil</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar-sm">{{ u.name[0] | upper }}</div>
+                  <div>
+                    <div class="fw-semibold">{{ u.name }}</div>
+                    <div class="text-muted" style="font-size:12px">{{ u.email }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><code class="code-tag">{{ u.username }}</code></td>
+              <td>
+                <span class="badge-perfil badge-{{ u.role }}">{{ get_role_label(u.role) }}</span>
+              </td>
+              <td>
+                {% if u.get('ativo', True) %}
+                <span class="badge-status badge-resolvido">Ativo</span>
+                {% else %}
+                <span class="badge-status badge-fechado">Inativo</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="action-btns">
+                  {% if u.id != session.user_id %}
+                  <!-- Toggle ativo/inativo -->
+                  <form method="POST" action="{{ url_for('toggle_usuario', user_id=u.id) }}" style="display:inline">
+                    <button type="submit" class="btn-acao {{ 'btn-danger-sm' if u.get('ativo', True) else 'btn-success-sm' }}"
+                            title="{{ 'Desativar' if u.get('ativo', True) else 'Ativar' }}">
+                      <i class="fa-solid fa-{{ 'ban' if u.get('ativo', True) else 'check' }}"></i>
+                    </button>
+                  </form>
+                  <!-- Alterar senha -->
+                  <button type="button" class="btn-acao" title="Alterar senha"
+                          onclick="abrirModalSenha('{{ u.id }}', '{{ u.name }}')">
+                    <i class="fa-solid fa-key"></i>
+                  </button>
+                  {% else %}
+                  <span class="text-muted small">(você)</span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRIAR USUÁRIO -->
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-user-plus"></i> Novo Usuário</h5>
+      </div>
+      <form method="POST" action="{{ url_for('criar_usuario') }}">
+        <div class="form-group">
+          <label class="form-lbl-sm">Nome completo <span class="req">*</span></label>
+          <input type="text" name="name" class="form-inp-sm" placeholder="Ex.: João da Silva" required />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl-sm">Usuário (login) <span class="req">*</span></label>
+          <input type="text" name="username" class="form-inp-sm" placeholder="Ex.: joao.silva" required
+                 pattern="[a-zA-Z0-9._-]+" title="Apenas letras, números, ponto, hífen ou underscore" />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl-sm">Senha <span class="req">*</span></label>
+          <input type="password" name="password" class="form-inp-sm" placeholder="Mínimo 4 caracteres" required minlength="4" />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl-sm">E-mail</label>
+          <input type="email" name="email" class="form-inp-sm" placeholder="email@empresa.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl-sm">Perfil <span class="req">*</span></label>
+          <select name="role" class="form-inp-sm form-sel-sm" required>
+            <option value="funcionario">Funcionário — somente abertura</option>
+            <option value="supervisor">Supervisor — acompanhamento e status</option>
+            <option value="admin">Administrador — acesso total</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-submit w-100">
+          <i class="fa-solid fa-user-plus"></i> Criar Usuário
+        </button>
+      </form>
+    </div>
+
+    <!-- SISTEMAS CADASTRADOS -->
+    <div class="card-panel mt-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-layer-group"></i> Sistemas Integrados</h5>
+      </div>
+      <div class="sistemas-list">
+        {% for s in sistemas %}
+        <div class="sistema-item">
+          <div class="sistema-info">
+            <span class="sistema-dot dot-{{ s | lower | replace(' ', '-') | replace('(', '') | replace(')', '') }}"></span>
+            <span class="sistema-nome">{{ s }}</span>
+          </div>
+          <span class="badge-status badge-resolvido" style="font-size:11px">Ativo</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ALTERAR SENHA -->
+<div class="modal fade" id="modalSenha" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="border-radius:16px; border:none; overflow:hidden;">
+      <div class="modal-header" style="background:#1e293b; color:white; border:none;">
+        <h6 class="modal-title"><i class="fa-solid fa-key"></i> Alterar Senha</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="formSenha">
+        <div class="modal-body">
+          <p class="text-muted small mb-3" id="modalUserName"></p>
+          <div class="form-group">
+            <label class="form-lbl-sm">Nova senha</label>
+            <input type="password" name="nova_senha" class="form-inp-sm" required minlength="4"
+                   placeholder="Mínimo 4 caracteres" />
+          </div>
+        </div>
+        <div class="modal-footer" style="border:none;">
+          <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn-submit">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function abrirModalSenha(userId, userName) {
+    document.getElementById('modalUserName').textContent = 'Usuário: ' + userName;
+    document.getElementById('formSenha').action = '/admin/usuario/' + userId + '/senha';
+    new bootstrap.Modal(document.getElementById('modalSenha')).show();
+  }
+</script>
+{% endblock %}

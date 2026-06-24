@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-title"><i class="fa-solid fa-chart-pie"></i> Dashboard</h2>
+  <p class="page-subtitle">Visão geral dos tickets
+    {% if session.role == 'funcionario' %}— seus chamados{% endif %}
+  </p>
+</div>
+
+<!-- CARDS DE STATS -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="stat-card stat-total">
+      <div class="stat-icon"><i class="fa-solid fa-ticket-simple"></i></div>
+      <div class="stat-number">{{ stats.total }}</div>
+      <div class="stat-label">Total</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="stat-card stat-aberto">
+      <div class="stat-icon"><i class="fa-solid fa-folder-open"></i></div>
+      <div class="stat-number">{{ stats.aberto }}</div>
+      <div class="stat-label">Abertos</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="stat-card stat-andamento">
+      <div class="stat-icon"><i class="fa-solid fa-arrows-rotate"></i></div>
+      <div class="stat-number">{{ stats.em_andamento }}</div>
+      <div class="stat-label">Em Andamento</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="stat-card stat-resolvido">
+      <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="stat-number">{{ stats.resolvido }}</div>
+      <div class="stat-label">Resolvidos</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="stat-card stat-fechado">
+      <div class="stat-icon"><i class="fa-solid fa-lock"></i></div>
+      <div class="stat-number">{{ stats.fechado }}</div>
+      <div class="stat-label">Fechados</div>
+    </div>
+  </div>
+  {% if session.role in ['admin', 'funcionario'] %}
+  <div class="col-6 col-md-4 col-xl-2">
+    <a href="{{ url_for('abrir_ticket') }}" class="stat-card stat-novo text-decoration-none">
+      <div class="stat-icon"><i class="fa-solid fa-circle-plus"></i></div>
+      <div class="stat-number"><i class="fa-solid fa-plus" style="font-size:22px"></i></div>
+      <div class="stat-label">Novo Ticket</div>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="row g-3">
+  <!-- TICKETS RECENTES -->
+  <div class="col-lg-8">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-clock-rotate-left"></i> Tickets Recentes</h5>
+        <a href="{{ url_for('acompanhamento') }}" class="btn-ver-todos">Ver todos</a>
+      </div>
+      {% if recentes %}
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nº</th>
+              <th>Título</th>
+              <th>Sistema</th>
+              <th>Status</th>
+              <th>Data</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in recentes %}
+            <tr>
+              <td><span class="ticket-num">{{ t.numero }}</span></td>
+              <td class="ticket-nome">{{ t.nome }}</td>
+              <td><span class="badge-sistema badge-{{ t.sistema | lower | replace(' ', '-') | replace('(', '') | replace(')', '') }}">{{ t.sistema }}</span></td>
+              <td><span class="badge-status badge-{{ t.status | lower | replace(' ', '-') }}">{{ t.status }}</span></td>
+              <td class="text-muted small">{{ t.data_formatada }}</td>
+              <td>
+                <a href="{{ url_for('ver_ticket', ticket_id=t.id) }}" class="btn-acao">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-inbox"></i>
+        <p>Nenhum ticket encontrado</p>
+        {% if session.role in ['admin', 'funcionario'] %}
+        <a href="{{ url_for('abrir_ticket') }}" class="btn-primary-sm">Abrir primeiro ticket</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- SISTEMAS -->
+  <div class="col-lg-4">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-layer-group"></i> Por Sistema</h5>
+      </div>
+      <div class="sistemas-list">
+        {% for sistema, count in sistemas_stats.items() %}
+        <div class="sistema-item">
+          <div class="sistema-info">
+            <span class="sistema-dot dot-{{ sistema | lower | replace(' ', '-') | replace('(', '') | replace(')', '') }}"></span>
+            <span class="sistema-nome">{{ sistema }}</span>
+          </div>
+          <span class="sistema-count">{{ count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if session.role in ['admin', 'supervisor'] %}
+    <div class="card-panel mt-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-chart-bar"></i> Distribuição</h5>
+      </div>
+      <div class="dist-bars">
+        {% set total = stats.total if stats.total > 0 else 1 %}
+        <div class="dist-item">
+          <div class="dist-label">
+            <span>Abertos</span>
+            <span>{{ stats.aberto }}</span>
+          </div>
+          <div class="dist-bar">
+            <div class="dist-fill fill-aberto" style="width: {{ (stats.aberto / total * 100) | int }}%"></div>
+          </div>
+        </div>
+        <div class="dist-item">
+          <div class="dist-label">
+            <span>Em Andamento</span>
+            <span>{{ stats.em_andamento }}</span>
+          </div>
+          <div class="dist-bar">
+            <div class="dist-fill fill-andamento" style="width: {{ (stats.em_andamento / total * 100) | int }}%"></div>
+          </div>
+        </div>
+        <div class="dist-item">
+          <div class="dist-label">
+            <span>Resolvidos</span>
+            <span>{{ stats.resolvido }}</span>
+          </div>
+          <div class="dist-bar">
+            <div class="dist-fill fill-resolvido" style="width: {{ (stats.resolvido / total * 100) | int }}%"></div>
+          </div>
+        </div>
+        <div class="dist-item">
+          <div class="dist-label">
+            <span>Fechados</span>
+            <span>{{ stats.fechado }}</span>
+          </div>
+          <div class="dist-bar">
+            <div class="dist-fill fill-fechado" style="width: {{ (stats.fechado / total * 100) | int }}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
