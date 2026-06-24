@@ -48,6 +48,14 @@
      class="cfg-tab {{ 'cfg-tab-active' if tab == 'horarios' else '' }}">
     <i class="fa-solid fa-clock"></i> Controle de Horários
   </a>
+  <a href="{{ url_for('configuracoes', tab='sistemas') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'sistemas' else '' }}">
+    <i class="fa-solid fa-layer-group"></i> Sistemas
+  </a>
+  <a href="{{ url_for('configuracoes', tab='personalizacao') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'personalizacao' else '' }}">
+    <i class="fa-solid fa-palette"></i> Personalização
+  </a>
 </div>
 
 <!-- MENSAGENS -->
@@ -57,12 +65,24 @@
 <div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Senha alterada com sucesso!</div>
 {% elif msg == 'horarios_salvos' %}
 <div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Horários salvos com sucesso!</div>
+{% elif msg == 'sistema_adicionado' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Sistema adicionado com sucesso!</div>
+{% elif msg == 'sistema_removido' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Sistema removido com sucesso!</div>
+{% elif msg == 'personalizacao_salva' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Personalização salva com sucesso!</div>
+{% elif msg == 'logo_salvo' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Logo enviada com sucesso!</div>
+{% elif msg == 'logo_removido' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Logo removida com sucesso!</div>
 {% endif %}
 
 {% if err == 'usuario_existe' %}
 <div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Já existe um usuário com esse nome de login.</div>
 {% elif err == 'campos_obrigatorios' %}
 <div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Preencha todos os campos obrigatórios.</div>
+{% elif err == 'logo_invalido' %}
+<div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Formato inválido. Use PNG, JPG, GIF, WEBP ou SVG.</div>
 {% endif %}
 
 <!-- ════════════════════════════════════ -->
@@ -446,6 +466,266 @@
     </div>
   </div>
 </div>
+
+
+<!-- ════════════════════════════════════ -->
+<!-- ABA: SISTEMAS                        -->
+<!-- ════════════════════════════════════ -->
+{% elif tab == 'sistemas' %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card-panel p-0">
+      <div class="card-panel-header" style="padding:16px 20px;">
+        <h5><i class="fa-solid fa-layer-group"></i> Sistemas Cadastrados</h5>
+        <span class="badge-status badge-aberto">{{ cfg.sistemas | length }} sistema(s)</span>
+      </div>
+      {% if cfg.sistemas %}
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nome do Sistema</th>
+              <th style="width:80px">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in cfg.sistemas %}
+            <tr>
+              <td>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span class="sistema-dot dot-{{ s | lower | replace(' ', '-') | replace('(', '') | replace(')', '') }}"></span>
+                  <span class="fw-semibold">{{ s }}</span>
+                </div>
+              </td>
+              <td>
+                <form method="POST" action="{{ url_for('cfg_sistema_remover') }}"
+                      onsubmit="return confirm('Remover o sistema \'{{ s }}\'? Tickets existentes não serão afetados.')">
+                  <input type="hidden" name="nome" value="{{ s }}" />
+                  <button type="submit" class="btn-acao btn-danger-sm" title="Remover sistema">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:24px">
+        <i class="fa-solid fa-layer-group" style="font-size:28px"></i>
+        <p style="font-size:14px">Nenhum sistema cadastrado</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-plus-circle"></i> Adicionar Sistema</h5>
+      </div>
+      <form method="POST" action="{{ url_for('cfg_sistema_adicionar') }}">
+        <div class="form-group">
+          <label class="form-lbl">Nome do sistema <span class="req">*</span></label>
+          <input type="text" name="nome" class="form-inp"
+                 placeholder="Ex.: Meu Sistema" required maxlength="60" />
+          <small class="text-muted" style="font-size:12px">
+            Nome que aparecerá na lista de sistemas ao abrir um ticket.
+          </small>
+        </div>
+        <button type="submit" class="btn-submit w-100">
+          <i class="fa-solid fa-plus"></i> Adicionar Sistema
+        </button>
+      </form>
+    </div>
+
+    <div class="card-panel mt-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-circle-info"></i> Informações</h5>
+      </div>
+      <div style="font-size:13px; color:var(--text-secondary); line-height:1.7">
+        <p><i class="fa-solid fa-check" style="color:var(--green)"></i> &nbsp;Os sistemas listados aparecem no formulário de abertura de ticket.</p>
+        <p class="mt-2"><i class="fa-solid fa-triangle-exclamation" style="color:var(--amber)"></i> &nbsp;Remover um sistema <strong>não afeta tickets já criados</strong> com ele.</p>
+        <p class="mt-2"><i class="fa-solid fa-info" style="color:var(--blue)"></i> &nbsp;O filtro de sistemas na página de acompanhamento reflete os sistemas ativos.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════ -->
+<!-- ABA: PERSONALIZAÇÃO                  -->
+<!-- ════════════════════════════════════ -->
+{% elif tab == 'personalizacao' %}
+{% set p = cfg.personalizacao %}
+<div class="row g-3">
+  <!-- CORES -->
+  <div class="col-lg-7">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-palette"></i> Cores do Sistema</h5>
+      </div>
+      <form method="POST" action="{{ url_for('cfg_personalizacao_salvar') }}">
+        <div class="form-group">
+          <label class="form-lbl">Nome do Sistema</label>
+          <input type="text" name="nome_sistema" class="form-inp"
+                 value="{{ p.nome_sistema }}" maxlength="40"
+                 placeholder="Ex.: Minha Empresa Tickets" />
+          <small class="text-muted" style="font-size:12px">Aparece na sidebar e na aba do navegador.</small>
+        </div>
+
+        <div class="color-row">
+          <input type="color" name="cor_botao" value="{{ p.cor_botao }}"
+                 id="cor_botao" oninput="previewColor(this, 'prev_botao')">
+          <div class="color-preview" id="prev_botao" style="background:{{ p.cor_botao }}"></div>
+          <div class="color-info">
+            <div class="color-label">Cor de Destaque / Botões</div>
+            <div class="color-desc">Cor principal usada em botões, links e ícones ativos.</div>
+          </div>
+        </div>
+
+        <div class="color-row">
+          <input type="color" name="cor_botao_light" value="{{ p.cor_botao_light }}"
+                 id="cor_botao_light" oninput="previewColor(this, 'prev_botao_light')">
+          <div class="color-preview" id="prev_botao_light" style="background:{{ p.cor_botao_light }}"></div>
+          <div class="color-info">
+            <div class="color-label">Cor de Fundo de Destaque</div>
+            <div class="color-desc">Fundo suave usado em badges, hovers e campos focados.</div>
+          </div>
+        </div>
+
+        <div class="color-row">
+          <input type="color" name="cor_fundo" value="{{ p.cor_fundo }}"
+                 id="cor_fundo" oninput="previewColor(this, 'prev_fundo')">
+          <div class="color-preview" id="prev_fundo" style="background:{{ p.cor_fundo }}"></div>
+          <div class="color-info">
+            <div class="color-label">Cor de Fundo da Página</div>
+            <div class="color-desc">Cor de fundo da área principal do sistema.</div>
+          </div>
+        </div>
+
+        <div class="color-row">
+          <input type="color" name="cor_sidebar" value="{{ p.cor_sidebar }}"
+                 id="cor_sidebar" oninput="previewColor(this, 'prev_sidebar')">
+          <div class="color-preview" id="prev_sidebar" style="background:{{ p.cor_sidebar }}"></div>
+          <div class="color-info">
+            <div class="color-label">Cor da Sidebar</div>
+            <div class="color-desc">Cor de fundo do menu lateral.</div>
+          </div>
+        </div>
+
+        <div class="color-row">
+          <input type="color" name="cor_sidebar_ativo" value="{{ p.cor_sidebar_ativo }}"
+                 id="cor_sidebar_ativo" oninput="previewColor(this, 'prev_sidebar_ativo')">
+          <div class="color-preview" id="prev_sidebar_ativo" style="background:{{ p.cor_sidebar_ativo }}"></div>
+          <div class="color-info">
+            <div class="color-label">Cor do Item Ativo na Sidebar</div>
+            <div class="color-desc">Cor do item de menu selecionado.</div>
+          </div>
+        </div>
+
+        <div class="color-row">
+          <input type="color" name="cor_texto" value="{{ p.cor_texto }}"
+                 id="cor_texto" oninput="previewColor(this, 'prev_texto')">
+          <div class="color-preview" id="prev_texto" style="background:{{ p.cor_texto }}"></div>
+          <div class="color-info">
+            <div class="color-label">Cor do Texto Principal</div>
+            <div class="color-desc">Cor base do texto e dos títulos.</div>
+          </div>
+        </div>
+
+        <div class="mt-3 d-flex gap-2">
+          <button type="submit" class="btn-submit">
+            <i class="fa-solid fa-floppy-disk"></i> Salvar Cores
+          </button>
+          <button type="button" class="btn-cancel" onclick="resetarPadrao()">
+            <i class="fa-solid fa-rotate-left"></i> Restaurar Padrão
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LOGO -->
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-image"></i> Logo do Sistema</h5>
+      </div>
+
+      {% if p.logo_filename %}
+      <div class="logo-preview-box">
+        <img src="{{ url_for('serve_logo') }}" alt="Logo atual" />
+        <div>
+          <div style="font-size:13px; font-weight:600; color:var(--text-primary)">Logo atual</div>
+          <div style="font-size:12px; color:var(--text-secondary)">{{ p.logo_filename }}</div>
+        </div>
+      </div>
+      <form method="POST" action="{{ url_for('cfg_logo_remover') }}" class="mb-3">
+        <button type="submit" class="btn-cancel w-100" style="justify-content:center; color:var(--red);"
+                onclick="return confirm('Remover a logo do sistema?')">
+          <i class="fa-solid fa-trash"></i> Remover Logo
+        </button>
+      </form>
+      {% else %}
+      <div class="empty-state" style="padding:20px 0 16px">
+        <i class="fa-solid fa-image" style="font-size:32px; color:#cbd5e1"></i>
+        <p style="font-size:13px">Nenhuma logo configurada.<br>O ícone padrão será exibido.</p>
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('cfg_logo_upload') }}" enctype="multipart/form-data">
+        <div class="form-group">
+          <label class="form-lbl">{{ 'Trocar Logo' if p.logo_filename else 'Enviar Logo' }}</label>
+          <input type="file" name="logo" class="form-inp" accept=".png,.jpg,.jpeg,.gif,.webp,.svg" required />
+          <small class="text-muted" style="font-size:12px">PNG, JPG, GIF, WEBP ou SVG. Recomendado: fundo transparente.</small>
+        </div>
+        <button type="submit" class="btn-submit w-100">
+          <i class="fa-solid fa-upload"></i> Enviar Logo
+        </button>
+      </form>
+    </div>
+
+    <div class="card-panel mt-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-circle-info"></i> Dicas</h5>
+      </div>
+      <div style="font-size:13px; color:var(--text-secondary); line-height:1.7">
+        <p><i class="fa-solid fa-check" style="color:var(--green)"></i> &nbsp;Use imagens quadradas (ex: 128×128px) para melhor resultado.</p>
+        <p class="mt-2"><i class="fa-solid fa-check" style="color:var(--green)"></i> &nbsp;PNG com fundo transparente fica melhor na sidebar escura.</p>
+        <p class="mt-2"><i class="fa-solid fa-info" style="color:var(--blue)"></i> &nbsp;As cores são aplicadas instantaneamente após salvar. Recarregue a página para ver o efeito completo.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function previewColor(input, previewId) {
+  document.getElementById(previewId).style.background = input.value;
+}
+
+function resetarPadrao() {
+  if (!confirm('Restaurar todas as cores para o padrão preto e branco?')) return;
+  const defaults = {
+    cor_botao:         '#111111',
+    cor_botao_light:   '#f0f0f0',
+    cor_fundo:         '#f1f5f9',
+    cor_sidebar:       '#0f172a',
+    cor_sidebar_ativo: '#111111',
+    cor_texto:         '#0f172a',
+  };
+  for (const [id, val] of Object.entries(defaults)) {
+    const inp = document.getElementById(id);
+    if (inp) {
+      inp.value = val;
+      const previewId = 'prev_' + id.replace('cor_', '');
+      const prev = document.getElementById(previewId);
+      if (prev) prev.style.background = val;
+    }
+  }
+}
+</script>
 {% endif %}
 
 <!-- MODAL ALTERAR SENHA -->

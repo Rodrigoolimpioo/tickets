@@ -17,7 +17,7 @@ if %errorlevel% neq 0 (
 echo [OK] Python encontrado.
 echo.
 echo Instalando pacotes necessarios...
-py -m pip install -r requirements.txt
+py -m pip install -r backend\requirements.txt
 
 if %errorlevel% neq 0 (
     echo.

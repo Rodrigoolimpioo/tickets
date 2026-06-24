@@ -7,10 +7,16 @@ import pytz
 from werkzeug.utils import secure_filename
 from functools import wraps
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), 'frontend')
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(FRONTEND_DIR, 'templates'),
+    static_folder=os.path.join(FRONTEND_DIR, 'static'),
+)
 app.secret_key = 'tickets-sistema-2024-secretkey'
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 UPLOADS_DIR = os.path.join(BASE_DIR, 'uploads')
 
@@ -18,9 +24,9 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'mp4', 'avi', 'mov', 'webm', 'mkv'}
+LOGO_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB
 
-SISTEMAS = ['Teknisa', 'Kdápio (Callcenter)', 'Lumia', 'iFood']
 STATUS_LIST = ['Aberto', 'Em Andamento', 'Resolvido', 'Fechado']
 
 DIAS_SEMANA = [
@@ -86,16 +92,36 @@ def get_default_config():
                 {'dia': 5, 'nome': 'Sábado',         'inicio': '08:00', 'fim': '12:00', 'ativo': False},
                 {'dia': 6, 'nome': 'Domingo',        'inicio': '00:00', 'fim': '00:00', 'ativo': False},
             ]
+        },
+        'sistemas': ['Teknisa', 'Kdápio (Callcenter)', 'Lumia', 'iFood'],
+        'personalizacao': {
+            'cor_botao':         '#111111',
+            'cor_botao_light':   '#f0f0f0',
+            'cor_fundo':         '#f1f5f9',
+            'cor_sidebar':       '#0f172a',
+            'cor_sidebar_ativo': '#111111',
+            'cor_texto':         '#0f172a',
+            'nome_sistema':      'Tickets',
+            'logo_filename':     None,
         }
     }
 
 
 def load_config():
     cfg_file = os.path.join(DATA_DIR, 'config.json')
+    defaults = get_default_config()
     if not os.path.exists(cfg_file):
-        return get_default_config()
+        return defaults
     with open(cfg_file, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        cfg = json.load(f)
+    for key, val in defaults.items():
+        if key not in cfg:
+            cfg[key] = val
+    return cfg
+
+
+def get_sistemas():
+    return load_config().get('sistemas', ['Teknisa', 'Kdápio (Callcenter)', 'Lumia', 'iFood'])
 
 
 def save_config(cfg):
@@ -127,6 +153,18 @@ def get_role_label(role):
 app.jinja_env.globals['get_role_label'] = get_role_label
 
 
+@app.context_processor
+def inject_global_config():
+    cfg = load_config()
+    pers = cfg.get('personalizacao', {})
+    return {
+        'cfg_global': cfg,
+        'g_nome_sistema': pers.get('nome_sistema', 'Tickets'),
+        'g_logo': pers.get('logo_filename'),
+        'now': get_brasilia_time(),
+    }
+
+
 # ─────────────────────────────────────────
 #  DECORATORS
 # ─────────────────────────────────────────
@@ -155,7 +193,7 @@ def role_required(*roles):
 #  ACCESS CONTROL MIDDLEWARE
 # ─────────────────────────────────────────
 
-ENDPOINTS_LIVRES = {'static', 'uploaded_file', 'acesso_negado', 'logout'}
+ENDPOINTS_LIVRES = {'static', 'uploaded_file', 'serve_logo', 'acesso_negado', 'logout'}
 
 
 @app.before_request
@@ -273,7 +311,7 @@ def dashboard():
         'resolvido':    sum(1 for t in tickets if t['status'] == 'Resolvido'),
         'fechado':      sum(1 for t in tickets if t['status'] == 'Fechado'),
     }
-    sistemas_stats = {s: sum(1 for t in tickets if t.get('sistema') == s) for s in SISTEMAS}
+    sistemas_stats = {s: sum(1 for t in tickets if t.get('sistema') == s) for s in get_sistemas()}
     recentes = sorted(tickets, key=lambda x: x.get('data_criacao', ''), reverse=True)[:5]
     return render_template('dashboard.html', stats=stats, recentes=recentes, sistemas_stats=sistemas_stats)
 
@@ -334,7 +372,7 @@ def abrir_ticket():
                 save_tickets(tickets)
                 return redirect(url_for('ver_ticket', ticket_id=ticket['id']))
 
-    return render_template('abrir_ticket.html', sistemas=SISTEMAS, error=error)
+    return render_template('abrir_ticket.html', sistemas=get_sistemas(), error=error)
 
 
 @app.route('/acompanhamento')
@@ -357,7 +395,7 @@ def acompanhamento():
 
     tickets = sorted(tickets, key=lambda x: x.get('data_criacao', ''), reverse=True)
     return render_template('acompanhamento.html', tickets=tickets,
-                           sistemas=SISTEMAS, status_list=STATUS_LIST,
+                           sistemas=get_sistemas(), status_list=STATUS_LIST,
                            filtro_status=filtro_status, filtro_sistema=filtro_sistema, busca=busca)
 
 
@@ -564,6 +602,91 @@ def cfg_horario_atualizar():
     return redirect(url_for('configuracoes', tab='horarios', msg='horarios_salvos'))
 
 
+# ── Sistemas ──────────────────────────────
+
+@app.route('/configuracoes/sistema/adicionar', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_sistema_adicionar():
+    cfg = load_config()
+    nome = request.form.get('nome', '').strip()
+    if nome and nome not in cfg['sistemas']:
+        cfg['sistemas'].append(nome)
+        save_config(cfg)
+    return redirect(url_for('configuracoes', tab='sistemas', msg='sistema_adicionado'))
+
+
+@app.route('/configuracoes/sistema/remover', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_sistema_remover():
+    cfg = load_config()
+    nome = request.form.get('nome', '').strip()
+    if nome in cfg['sistemas']:
+        cfg['sistemas'].remove(nome)
+        save_config(cfg)
+    return redirect(url_for('configuracoes', tab='sistemas', msg='sistema_removido'))
+
+
+# ── Personalização ────────────────────────
+
+@app.route('/configuracoes/personalizacao/salvar', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_personalizacao_salvar():
+    cfg = load_config()
+    p = cfg['personalizacao']
+    p['cor_botao']         = request.form.get('cor_botao',         p['cor_botao'])
+    p['cor_botao_light']   = request.form.get('cor_botao_light',   p['cor_botao_light'])
+    p['cor_fundo']         = request.form.get('cor_fundo',         p['cor_fundo'])
+    p['cor_sidebar']       = request.form.get('cor_sidebar',       p['cor_sidebar'])
+    p['cor_sidebar_ativo'] = request.form.get('cor_sidebar_ativo', p['cor_sidebar_ativo'])
+    p['cor_texto']         = request.form.get('cor_texto',         p['cor_texto'])
+    p['nome_sistema']      = request.form.get('nome_sistema', 'Tickets').strip() or 'Tickets'
+    save_config(cfg)
+    return redirect(url_for('configuracoes', tab='personalizacao', msg='personalizacao_salva'))
+
+
+@app.route('/configuracoes/logo/upload', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_logo_upload():
+    cfg = load_config()
+    if 'logo' not in request.files:
+        return redirect(url_for('configuracoes', tab='personalizacao', err='logo_invalido'))
+    file = request.files['logo']
+    if not file or not file.filename:
+        return redirect(url_for('configuracoes', tab='personalizacao', err='logo_invalido'))
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in LOGO_EXTENSIONS:
+        return redirect(url_for('configuracoes', tab='personalizacao', err='logo_invalido'))
+    old_logo = cfg['personalizacao'].get('logo_filename')
+    if old_logo:
+        old_path = os.path.join(UPLOADS_DIR, old_logo)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+    fname = f"logo_{uuid.uuid4().hex}.{ext}"
+    file.save(os.path.join(UPLOADS_DIR, fname))
+    cfg['personalizacao']['logo_filename'] = fname
+    save_config(cfg)
+    return redirect(url_for('configuracoes', tab='personalizacao', msg='logo_salvo'))
+
+
+@app.route('/configuracoes/logo/remover', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_logo_remover():
+    cfg = load_config()
+    logo = cfg['personalizacao'].get('logo_filename')
+    if logo:
+        path = os.path.join(UPLOADS_DIR, logo)
+        if os.path.exists(path):
+            os.remove(path)
+        cfg['personalizacao']['logo_filename'] = None
+        save_config(cfg)
+    return redirect(url_for('configuracoes', tab='personalizacao', msg='logo_removido'))
+
+
 # ─────────────────────────────────────────
 #  ROUTES — PERFIL & MISC
 # ─────────────────────────────────────────
@@ -598,6 +721,15 @@ def meu_perfil():
 @login_required
 def uploaded_file(filename):
     return send_from_directory(UPLOADS_DIR, filename)
+
+
+@app.route('/logo')
+def serve_logo():
+    cfg = load_config()
+    logo = cfg.get('personalizacao', {}).get('logo_filename')
+    if logo:
+        return send_from_directory(UPLOADS_DIR, logo)
+    return '', 404
 
 
 @app.route('/api/stats')

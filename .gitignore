@@ -9,19 +9,20 @@ venv/
 env/
 
 # Uploads dos usuários (arquivos de tickets)
-uploads/*
-!uploads/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
 
 # Dados locais (gerados na primeira execução)
-data/users.json
-data/tickets.json
-data/config.json
+backend/data/users.json
+backend/data/tickets.json
+backend/data/config.json
 
 # Manter estrutura da pasta data
-!data/.gitkeep
+!backend/data/.gitkeep
 
 # Sistema
 .DS_Store
 Thumbs.db
 *.log
 .env
+.claude/

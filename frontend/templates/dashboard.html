@@ -12,43 +12,43 @@
 <!-- CARDS DE STATS -->
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-4 col-xl-2">
-    <div class="stat-card stat-total">
+    <a href="{{ url_for('acompanhamento') }}" class="stat-card stat-total">
       <div class="stat-icon"><i class="fa-solid fa-ticket-simple"></i></div>
       <div class="stat-number">{{ stats.total }}</div>
       <div class="stat-label">Total</div>
-    </div>
+    </a>
   </div>
   <div class="col-6 col-md-4 col-xl-2">
-    <div class="stat-card stat-aberto">
+    <a href="{{ url_for('acompanhamento', status='Aberto') }}" class="stat-card stat-aberto">
       <div class="stat-icon"><i class="fa-solid fa-folder-open"></i></div>
       <div class="stat-number">{{ stats.aberto }}</div>
       <div class="stat-label">Abertos</div>
-    </div>
+    </a>
   </div>
   <div class="col-6 col-md-4 col-xl-2">
-    <div class="stat-card stat-andamento">
+    <a href="{{ url_for('acompanhamento', status='Em Andamento') }}" class="stat-card stat-andamento">
       <div class="stat-icon"><i class="fa-solid fa-arrows-rotate"></i></div>
       <div class="stat-number">{{ stats.em_andamento }}</div>
       <div class="stat-label">Em Andamento</div>
-    </div>
+    </a>
   </div>
   <div class="col-6 col-md-4 col-xl-2">
-    <div class="stat-card stat-resolvido">
+    <a href="{{ url_for('acompanhamento', status='Resolvido') }}" class="stat-card stat-resolvido">
       <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
       <div class="stat-number">{{ stats.resolvido }}</div>
       <div class="stat-label">Resolvidos</div>
-    </div>
+    </a>
   </div>
   <div class="col-6 col-md-4 col-xl-2">
-    <div class="stat-card stat-fechado">
+    <a href="{{ url_for('acompanhamento', status='Fechado') }}" class="stat-card stat-fechado">
       <div class="stat-icon"><i class="fa-solid fa-lock"></i></div>
       <div class="stat-number">{{ stats.fechado }}</div>
       <div class="stat-label">Fechados</div>
-    </div>
+    </a>
   </div>
   {% if session.role in ['admin', 'funcionario'] %}
   <div class="col-6 col-md-4 col-xl-2">
-    <a href="{{ url_for('abrir_ticket') }}" class="stat-card stat-novo text-decoration-none">
+    <a href="{{ url_for('abrir_ticket') }}" class="stat-card stat-novo">
       <div class="stat-icon"><i class="fa-solid fa-circle-plus"></i></div>
       <div class="stat-number"><i class="fa-solid fa-plus" style="font-size:22px"></i></div>
       <div class="stat-label">Novo Ticket</div>

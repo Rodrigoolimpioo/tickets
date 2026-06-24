@@ -14,5 +14,6 @@ echo.
 echo   Pressione CTRL+C para encerrar o servidor.
 echo ============================================================
 echo.
+cd backend
 py app.py
 pause
