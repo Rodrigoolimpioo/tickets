@@ -25,4 +25,5 @@ backend/data/config.json
 Thumbs.db
 *.log
 .env
+backend/.env
 .claude/

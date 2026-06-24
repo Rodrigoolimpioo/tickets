@@ -1,21 +1,41 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory
 import json
 import os
+import re
+import secrets
 import uuid
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, timedelta
 import pytz
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), 'frontend')
+
+# ── Variáveis de ambiente ──────────────────
+def _load_dotenv():
+    env_file = os.path.join(BASE_DIR, '.env')
+    if not os.path.exists(env_file):
+        return
+    with open(env_file, encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, val = line.split('=', 1)
+                os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
+
+_load_dotenv()
 
 app = Flask(
     __name__,
     template_folder=os.path.join(FRONTEND_DIR, 'templates'),
     static_folder=os.path.join(FRONTEND_DIR, 'static'),
 )
-app.secret_key = 'tickets-sistema-2024-secretkey'
+app.secret_key = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 UPLOADS_DIR = os.path.join(BASE_DIR, 'uploads')
@@ -24,10 +44,13 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'mp4', 'avi', 'mov', 'webm', 'mkv'}
-LOGO_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
+# SVG removido — pode conter JavaScript inline (risco XSS)
+LOGO_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB
 
 STATUS_LIST = ['Aberto', 'Em Andamento', 'Resolvido', 'Fechado']
+ROLES_VALIDOS = {'admin', 'supervisor', 'funcionario'}
+HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
 
 DIAS_SEMANA = [
     {'dia': 0, 'nome': 'Segunda-feira'},
@@ -38,6 +61,44 @@ DIAS_SEMANA = [
     {'dia': 5, 'nome': 'Sábado'},
     {'dia': 6, 'nome': 'Domingo'},
 ]
+
+# Rate limiting simples em memória (por IP)
+_login_attempts: dict = defaultdict(list)
+_LOGIN_MAX = 5
+_LOGIN_LOCKOUT_MIN = 15
+
+
+# ─────────────────────────────────────────
+#  SECURITY HELPERS
+# ─────────────────────────────────────────
+
+def valid_hex(value: str, default: str) -> str:
+    return value if HEX_COLOR_RE.match(value or '') else default
+
+
+def _is_hashed(stored: str) -> bool:
+    return stored.startswith(('pbkdf2:', 'scrypt:', 'argon2'))
+
+
+def verify_password(stored: str, provided: str) -> bool:
+    if _is_hashed(stored):
+        return check_password_hash(stored, provided)
+    return stored == provided  # plaintext legado
+
+
+def hash_password(password: str) -> str:
+    return generate_password_hash(password)
+
+
+def _rate_limit_exceeded(ip: str) -> bool:
+    now = datetime.utcnow()
+    cutoff = now - timedelta(minutes=_LOGIN_LOCKOUT_MIN)
+    _login_attempts[ip] = [t for t in _login_attempts[ip] if t > cutoff]
+    return len(_login_attempts[ip]) >= _LOGIN_MAX
+
+
+def _register_failed_login(ip: str) -> None:
+    _login_attempts[ip].append(datetime.utcnow())
 
 
 # ─────────────────────────────────────────
@@ -165,6 +226,15 @@ def inject_global_config():
     }
 
 
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    return response
+
+
 # ─────────────────────────────────────────
 #  DECORATORS
 # ─────────────────────────────────────────
@@ -221,7 +291,7 @@ def check_access_controls():
     # ── Horário Control ─────────────────────────────────
     h_cfg = cfg.get('horario_control', {})
     if h_cfg.get('enabled', False) and request.endpoint not in ('login',):
-        dia_atual = now.weekday()          # 0 = segunda
+        dia_atual = now.weekday()
         hora_atual = now.strftime('%H:%M')
         horarios = h_cfg.get('horarios', [])
         reg = next((h for h in horarios if h['dia'] == dia_atual), None)
@@ -266,17 +336,27 @@ def login():
         return redirect(url_for('dashboard'))
     error = None
     if request.method == 'POST':
+        client_ip = get_client_ip()
+        if _rate_limit_exceeded(client_ip):
+            error = f'Muitas tentativas. Aguarde {_LOGIN_LOCKOUT_MIN} minutos.'
+            return render_template('login.html', error=error)
+
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         users = load_users()
         user = next((u for u in users
-                     if u['username'] == username
-                     and u['password'] == password
-                     and u.get('ativo', True)), None)
-        if user:
+                     if u['username'] == username and u.get('ativo', True)), None)
+
+        if user and verify_password(user['password'], password):
+            # Migra senha plaintext para hash automaticamente
+            if not _is_hashed(user['password']):
+                user['password'] = hash_password(password)
+                save_users(users)
             session.update({'user_id': user['id'], 'username': user['username'],
                             'name': user['name'], 'role': user['role']})
             return redirect(url_for('dashboard'))
+
+        _register_failed_login(client_ip)
         error = 'Usuário ou senha inválidos.'
     return render_template('login.html', error=error)
 
@@ -479,7 +559,6 @@ def configuracoes():
                            msg=msg, err=err)
 
 
-# Rota legada — redireciona para configurações
 @app.route('/admin')
 @login_required
 @role_required('admin')
@@ -504,9 +583,11 @@ def cfg_criar_usuario():
         return redirect(url_for('configuracoes', tab='usuarios', err='campos_obrigatorios'))
     if any(u['username'] == username for u in users):
         return redirect(url_for('configuracoes', tab='usuarios', err='usuario_existe'))
+    if role not in ROLES_VALIDOS:
+        role = 'funcionario'
 
     users.append({'id': str(uuid.uuid4()), 'username': username,
-                  'password': password, 'name': name,
+                  'password': hash_password(password), 'name': name,
                   'role': role, 'email': email, 'ativo': True})
     save_users(users)
     return redirect(url_for('configuracoes', tab='usuarios', msg='usuario_criado'))
@@ -534,7 +615,7 @@ def cfg_alterar_senha(user_id):
     user      = next((u for u in users if u['id'] == user_id), None)
     nova_senha = request.form.get('nova_senha', '').strip()
     if user and nova_senha and len(nova_senha) >= 4:
-        user['password'] = nova_senha
+        user['password'] = hash_password(nova_senha)
         save_users(users)
     return redirect(url_for('configuracoes', tab='usuarios', msg='senha_alterada'))
 
@@ -569,7 +650,6 @@ def cfg_ip_adicionar():
 def cfg_ip_remover():
     cfg = load_config()
     ip  = request.form.get('ip', '').strip()
-    # Não permite remover o IP atual se o controle estiver ativo
     if ip in cfg['ip_control']['ips']:
         cfg['ip_control']['ips'].remove(ip)
         save_config(cfg)
@@ -636,12 +716,12 @@ def cfg_sistema_remover():
 def cfg_personalizacao_salvar():
     cfg = load_config()
     p = cfg['personalizacao']
-    p['cor_botao']         = request.form.get('cor_botao',         p['cor_botao'])
-    p['cor_botao_light']   = request.form.get('cor_botao_light',   p['cor_botao_light'])
-    p['cor_fundo']         = request.form.get('cor_fundo',         p['cor_fundo'])
-    p['cor_sidebar']       = request.form.get('cor_sidebar',       p['cor_sidebar'])
-    p['cor_sidebar_ativo'] = request.form.get('cor_sidebar_ativo', p['cor_sidebar_ativo'])
-    p['cor_texto']         = request.form.get('cor_texto',         p['cor_texto'])
+    p['cor_botao']         = valid_hex(request.form.get('cor_botao'),         p['cor_botao'])
+    p['cor_botao_light']   = valid_hex(request.form.get('cor_botao_light'),   p['cor_botao_light'])
+    p['cor_fundo']         = valid_hex(request.form.get('cor_fundo'),         p['cor_fundo'])
+    p['cor_sidebar']       = valid_hex(request.form.get('cor_sidebar'),       p['cor_sidebar'])
+    p['cor_sidebar_ativo'] = valid_hex(request.form.get('cor_sidebar_ativo'), p['cor_sidebar_ativo'])
+    p['cor_texto']         = valid_hex(request.form.get('cor_texto'),         p['cor_texto'])
     p['nome_sistema']      = request.form.get('nome_sistema', 'Tickets').strip() or 'Tickets'
     save_config(cfg)
     return redirect(url_for('configuracoes', tab='personalizacao', msg='personalizacao_salva'))
@@ -703,14 +783,14 @@ def meu_perfil():
         nova_senha   = request.form.get('nova_senha', '').strip()
         confirmar    = request.form.get('confirmar_senha', '').strip()
 
-        if user['password'] != senha_atual:
+        if not verify_password(user['password'], senha_atual):
             error = 'Senha atual incorreta.'
         elif nova_senha != confirmar:
             error = 'As senhas não coincidem.'
         elif len(nova_senha) < 4:
             error = 'A nova senha deve ter pelo menos 4 caracteres.'
         else:
-            user['password'] = nova_senha
+            user['password'] = hash_password(nova_senha)
             save_users(users)
             success = 'Senha alterada com sucesso!'
 
@@ -753,12 +833,15 @@ def init_data():
 
     if not os.path.exists(users_file):
         save_users([
-            {'id': '1', 'username': 'admin',       'password': 'admin123', 'name': 'Administrador',
-             'role': 'admin',       'email': 'admin@tickets.local',       'ativo': True},
-            {'id': '2', 'username': 'supervisor',   'password': 'super123', 'name': 'Supervisor',
-             'role': 'supervisor',  'email': 'supervisor@tickets.local',   'ativo': True},
-            {'id': '3', 'username': 'funcionario',  'password': 'func123',  'name': 'Funcionário',
-             'role': 'funcionario', 'email': 'funcionario@tickets.local',  'ativo': True},
+            {'id': '1', 'username': 'admin',
+             'password': hash_password('admin123'), 'name': 'Administrador',
+             'role': 'admin', 'email': 'admin@tickets.local', 'ativo': True},
+            {'id': '2', 'username': 'supervisor',
+             'password': hash_password('super123'), 'name': 'Supervisor',
+             'role': 'supervisor', 'email': 'supervisor@tickets.local', 'ativo': True},
+            {'id': '3', 'username': 'funcionario',
+             'password': hash_password('func123'), 'name': 'Funcionário',
+             'role': 'funcionario', 'email': 'funcionario@tickets.local', 'ativo': True},
         ])
 
     if not os.path.exists(tickets_file):
