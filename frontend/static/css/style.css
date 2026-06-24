@@ -521,6 +521,30 @@ body {
   transition: all 0.15s; display: inline-flex; align-items: center; gap: 0.4rem;
 }
 .btn-modal-confirm:hover { background: #b91c1c; }
+
+/* ===== PERFIS DE ACESSO ===== */
+.perm-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+}
+.perm-on  { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.perm-off { background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; text-decoration: line-through; }
+
+.perm-check-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;
+}
+.perm-check-item { display: flex; gap: 0; cursor: pointer; }
+.perm-check-item input[type="checkbox"] { display: none; }
+.perm-check-box {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 12px; border-radius: 8px; font-size: 13px;
+  border: 1.5px solid var(--border); background: var(--gray-light);
+  color: var(--text-secondary); transition: all 0.15s; width: 100%; cursor: pointer;
+}
+.perm-check-item input:checked + .perm-check-box {
+  background: #f0fdf4; color: #16a34a; border-color: #86efac;
+}
+.perm-check-box:hover { border-color: #aaaaaa; color: var(--text-primary); }
 .btn-success-sm { background: var(--green-light); color: var(--green); border-color: #bbf7d0; }
 .btn-success-sm:hover { background: var(--green); color: white; }
 

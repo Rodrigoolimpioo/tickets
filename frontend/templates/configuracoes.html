@@ -56,6 +56,10 @@
      class="cfg-tab {{ 'cfg-tab-active' if tab == 'personalizacao' else '' }}">
     <i class="fa-solid fa-palette"></i> Personalização
   </a>
+  <a href="{{ url_for('configuracoes', tab='perfis') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'perfis' else '' }}">
+    <i class="fa-solid fa-id-badge"></i> Perfis de Acesso
+  </a>
 </div>
 
 <!-- MENSAGENS -->
@@ -75,6 +79,12 @@
 <div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Logo enviada com sucesso!</div>
 {% elif msg == 'logo_removido' %}
 <div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Logo removida com sucesso!</div>
+{% elif msg == 'perfil_criado' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Perfil criado com sucesso!</div>
+{% elif msg == 'perfil_atualizado' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Perfil atualizado com sucesso!</div>
+{% elif msg == 'perfil_removido' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Perfil removido com sucesso!</div>
 {% endif %}
 
 {% if err == 'usuario_existe' %}
@@ -82,7 +92,9 @@
 {% elif err == 'campos_obrigatorios' %}
 <div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Preencha todos os campos obrigatórios.</div>
 {% elif err == 'logo_invalido' %}
-<div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Formato inválido. Use PNG, JPG, GIF, WEBP ou SVG.</div>
+<div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Formato inválido. Use PNG, JPG, GIF ou WEBP.</div>
+{% elif err == 'nome_obrigatorio' %}
+<div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> O nome do perfil é obrigatório.</div>
 {% endif %}
 
 <!-- ════════════════════════════════════ -->
@@ -103,7 +115,7 @@
           <thead>
             <tr>
               <th>Nome / Login</th>
-              <th>Perfil</th>
+              <th>Tipo / Perfil</th>
               <th>Status</th>
               <th style="width:130px">Ações</th>
             </tr>
@@ -122,6 +134,11 @@
               </td>
               <td>
                 <span class="badge-perfil badge-{{ u.role }}">{{ get_role_label(u.role) }}</span>
+                {% if u.get('perfil_id') and u.get('perfil_id') in perfis_dict %}
+                <br><span style="font-size:11px; color:var(--text-secondary)">
+                  <i class="fa-solid fa-id-badge"></i> {{ perfis_dict[u.perfil_id].nome }}
+                </span>
+                {% endif %}
               </td>
               <td>
                 {% if u.get('ativo', True) %}
@@ -144,6 +161,12 @@
                           onclick="abrirModalSenha('{{ u.id }}', '{{ u.name }}')">
                     <i class="fa-solid fa-key"></i>
                   </button>
+                  {% if u.role != 'admin' %}
+                  <button type="button" class="btn-acao" title="Alterar perfil de acesso"
+                          onclick="abrirModalPerfil('{{ u.id }}', '{{ u.name }}', '{{ u.get('perfil_id', '') }}')">
+                    <i class="fa-solid fa-id-badge"></i>
+                  </button>
+                  {% endif %}
                   {% else %}
                   <span class="text-muted" style="font-size:12px">(você)</span>
                   {% endif %}
@@ -193,19 +216,28 @@
           <input type="email" name="email" class="form-inp" placeholder="email@empresa.com" />
         </div>
         <div class="form-group">
-          <label class="form-lbl">Perfil de Acesso <span class="req">*</span></label>
-          <select name="role" class="form-inp form-sel" required>
-            <option value="funcionario">Funcionário — somente abertura de tickets</option>
-            <option value="supervisor">Supervisor — acompanhamento e atualização de status</option>
-            <option value="admin">Administrador — acesso total ao sistema</option>
+          <label class="form-lbl">Tipo de Conta <span class="req">*</span></label>
+          <select name="role" class="form-inp form-sel" required id="selectRole" onchange="togglePerfilSelect()">
+            <option value="funcionario">Funcionário</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="admin">Administrador</option>
           </select>
+          <small class="text-muted" style="font-size:12px">Administrador tem acesso total, independente do perfil.</small>
+        </div>
+        <div class="form-group" id="grupoPerfilAcesso">
+          <label class="form-lbl">Perfil de Permissões</label>
+          <select name="perfil_id" class="form-inp form-sel">
+            <option value="">— Usar padrão do tipo de conta —</option>
+            {% for p in perfis %}
+            <option value="{{ p.id }}">{{ p.nome }}{% if p.descricao %} — {{ p.descricao }}{% endif %}</option>
+            {% endfor %}
+          </select>
+          <small class="text-muted" style="font-size:12px">Define quais páginas e funções o usuário pode acessar.</small>
         </div>
         <div class="info-box mb-3">
           <i class="fa-solid fa-circle-info"></i>
           <div>
-            <strong>Perfis disponíveis:</strong><br>
-            <strong>Funcionário</strong> abre tickets · <strong>Supervisor</strong> acompanha e atualiza status ·
-            <strong>Administrador</strong> tem acesso total, incluindo configurações
+            Crie perfis personalizados na aba <strong>Perfis de Acesso</strong> e atribua aqui ao criar o usuário.
           </div>
         </div>
         <button type="submit" class="btn-submit w-100">
@@ -728,6 +760,36 @@ function resetarPadrao() {
 </script>
 {% endif %}
 
+<!-- MODAL ALTERAR PERFIL DE USUÁRIO -->
+<div class="modal fade" id="modalPerfil" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="border-radius:16px; border:none; overflow:hidden">
+      <div class="modal-header" style="background:#1e293b; color:white; border:none">
+        <h6 class="modal-title"><i class="fa-solid fa-id-badge"></i> Perfil de Acesso</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="formAlterarPerfil">
+        <div class="modal-body">
+          <p class="text-muted small mb-3" id="modalPerfilUserName"></p>
+          <div class="form-group">
+            <label class="form-lbl-sm">Perfil de permissões</label>
+            <select name="perfil_id" id="selectPerfilModal" class="form-inp-sm">
+              <option value="">— Usar padrão do tipo de conta —</option>
+              {% for p in perfis %}
+              <option value="{{ p.id }}">{{ p.nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer" style="border:none">
+          <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn-submit">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL ALTERAR SENHA -->
 <div class="modal fade" id="modalSenha" tabindex="-1">
   <div class="modal-dialog modal-sm">
@@ -779,6 +841,22 @@ function resetarPadrao() {
     }
   }
 
+  function togglePerfilSelect() {
+    const role = document.getElementById('selectRole');
+    const grupo = document.getElementById('grupoPerfilAcesso');
+    if (role && grupo) {
+      grupo.style.display = role.value === 'admin' ? 'none' : '';
+    }
+  }
+
+  function abrirModalPerfil(userId, userName, perfilAtual) {
+    document.getElementById('modalPerfilUserName').textContent = 'Usuário: ' + userName;
+    document.getElementById('formAlterarPerfil').action = '/configuracoes/usuario/' + userId + '/perfil';
+    const sel = document.getElementById('selectPerfilModal');
+    if (sel) sel.value = perfilAtual || '';
+    new bootstrap.Modal(document.getElementById('modalPerfil')).show();
+  }
+
   function toggleDia(cb, dia) {
     const row   = cb.closest('.horario-row');
     const inps  = row.querySelectorAll('input[type="time"]');
@@ -814,4 +892,157 @@ function resetarPadrao() {
   atualizarRelogioCfg();
   setInterval(atualizarRelogioCfg, 1000);
 </script>
-{% endblock %}
+
+
+<!-- ════════════════════════════════════ -->
+<!-- ABA: PERFIS DE ACESSO                -->
+<!-- ════════════════════════════════════ -->
+{% elif tab == 'perfis' %}
+<div class="row g-3">
+
+  <!-- LISTA DE PERFIS -->
+  <div class="col-lg-7">
+    {% for perfil in perfis %}
+    <div class="card-panel mb-3">
+      <div class="card-panel-header">
+        <div>
+          <h5 style="margin:0">
+            <i class="fa-solid fa-id-badge" style="color:var(--blue)"></i>
+            {{ perfil.nome }}
+            {% if perfil.get('padrao') %}
+            <span class="badge-status badge-resolvido" style="font-size:11px; margin-left:6px">Padrão</span>
+            {% endif %}
+          </h5>
+          {% if perfil.descricao %}
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:2px">{{ perfil.descricao }}</div>
+          {% endif %}
+        </div>
+        <div style="display:flex; gap:8px; align-items:center">
+          <button type="button" class="btn-acao" title="Editar perfil"
+                  onclick="abrirModalEditarPerfil('{{ perfil.id }}', '{{ perfil.nome }}', '{{ perfil.descricao }}', {{ perfil.permissoes | tojson }})">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          {% if not perfil.get('padrao') %}
+          <form method="POST" action="{{ url_for('cfg_perfil_excluir', perfil_id=perfil.id) }}"
+                onsubmit="return confirm('Excluir o perfil?')">
+            <button type="submit" class="btn-acao btn-acao-danger" title="Excluir perfil">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; padding:4px 0 2px">
+        {% for perm_id, perm_label, perm_icon in PERMISSOES %}
+        <span class="perm-badge {{ 'perm-on' if perm_id in perfil.permissoes else 'perm-off' }}">
+          <i class="fa-solid {{ perm_icon }}"></i> {{ perm_label }}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card-panel">
+      <div class="empty-state" style="padding:32px">
+        <i class="fa-solid fa-id-badge" style="font-size:36px; color:#cbd5e1"></i>
+        <p>Nenhum perfil cadastrado</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- CRIAR PERFIL -->
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-plus-circle"></i> Criar Novo Perfil</h5>
+      </div>
+      <form method="POST" action="{{ url_for('cfg_perfil_criar') }}">
+        <div class="form-group">
+          <label class="form-lbl">Nome do perfil <span class="req">*</span></label>
+          <input type="text" name="nome" class="form-inp"
+                 placeholder="Ex.: Atendente, Gerente..." required maxlength="50" />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Descrição</label>
+          <input type="text" name="descricao" class="form-inp"
+                 placeholder="Breve descrição do perfil" maxlength="100" />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Permissões</label>
+          <div class="perm-check-grid">
+            {% for perm_id, perm_label, perm_icon in PERMISSOES %}
+            <label class="perm-check-item">
+              <input type="checkbox" name="permissoes" value="{{ perm_id }}" />
+              <span class="perm-check-box">
+                <i class="fa-solid {{ perm_icon }}"></i>
+                {{ perm_label }}
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <button type="submit" class="btn-submit w-100">
+          <i class="fa-solid fa-plus"></i> Criar Perfil
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Perfil -->
+<div class="modal fade" id="modalEditarPerfil" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="border-radius:16px; border:none; overflow:hidden">
+      <div class="modal-header" style="background:#1e293b; color:white; border:none">
+        <h6 class="modal-title"><i class="fa-solid fa-id-badge"></i> Editar Perfil</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="formEditarPerfil">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-lbl">Nome do perfil <span class="req">*</span></label>
+            <input type="text" name="nome" id="editPerfilNome" class="form-inp" required maxlength="50" />
+          </div>
+          <div class="form-group">
+            <label class="form-lbl">Descrição</label>
+            <input type="text" name="descricao" id="editPerfilDesc" class="form-inp" maxlength="100" />
+          </div>
+          <div class="form-group">
+            <label class="form-lbl">Permissões</label>
+            <div class="perm-check-grid">
+              {% for perm_id, perm_label, perm_icon in PERMISSOES %}
+              <label class="perm-check-item">
+                <input type="checkbox" name="permissoes" value="{{ perm_id }}" class="edit-perm-cb" />
+                <span class="perm-check-box">
+                  <i class="fa-solid {{ perm_icon }}"></i>
+                  {{ perm_label }}
+                </span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border:none">
+          <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn-submit">
+            <i class="fa-solid fa-floppy-disk"></i> Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirModalEditarPerfil(id, nome, desc, perms) {
+  document.getElementById('editPerfilNome').value = nome;
+  document.getElementById('editPerfilDesc').value = desc;
+  document.getElementById('formEditarPerfil').action = '/configuracoes/perfil/' + id + '/atualizar';
+  document.querySelectorAll('.edit-perm-cb').forEach(cb => {
+    cb.checked = perms.includes(cb.value);
+  });
+  new bootstrap.Modal(document.getElementById('modalEditarPerfil')).show();
+}
+</script>
+
+{% endif %}

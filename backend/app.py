@@ -14,7 +14,6 @@ from functools import wraps
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), 'frontend')
 
-# ── Variáveis de ambiente ──────────────────
 def _load_dotenv():
     env_file = os.path.join(BASE_DIR, '.env')
     if not os.path.exists(env_file):
@@ -44,13 +43,24 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'mp4', 'avi', 'mov', 'webm', 'mkv'}
-# SVG removido — pode conter JavaScript inline (risco XSS)
 LOGO_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 STATUS_LIST = ['Aberto', 'Em Andamento', 'Resolvido', 'Fechado']
 ROLES_VALIDOS = {'admin', 'supervisor', 'funcionario'}
 HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
+
+# Permissões disponíveis no sistema
+PERMISSOES = [
+    ('dashboard',        'Dashboard',                      'fa-gauge-high'),
+    ('abrir_ticket',     'Abrir Tickets',                  'fa-circle-plus'),
+    ('acompanhamento',   'Acompanhamento de Tickets',      'fa-list-check'),
+    ('ver_ticket',       'Visualizar Detalhes do Ticket',  'fa-eye'),
+    ('atualizar_ticket', 'Atualizar Status do Ticket',     'fa-pen-to-square'),
+    ('comentar_ticket',  'Comentar em Tickets',            'fa-comment'),
+    ('meu_perfil',       'Meu Perfil',                     'fa-user'),
+]
+PERMISSOES_IDS = [p[0] for p in PERMISSOES]
 
 DIAS_SEMANA = [
     {'dia': 0, 'nome': 'Segunda-feira'},
@@ -62,7 +72,6 @@ DIAS_SEMANA = [
     {'dia': 6, 'nome': 'Domingo'},
 ]
 
-# Rate limiting simples em memória (por IP)
 _login_attempts: dict = defaultdict(list)
 _LOGIN_MAX = 5
 _LOGIN_LOCKOUT_MIN = 15
@@ -83,7 +92,7 @@ def _is_hashed(stored: str) -> bool:
 def verify_password(stored: str, provided: str) -> bool:
     if _is_hashed(stored):
         return check_password_hash(stored, provided)
-    return stored == provided  # plaintext legado
+    return stored == provided
 
 
 def hash_password(password: str) -> str:
@@ -99,6 +108,25 @@ def _rate_limit_exceeded(ip: str) -> bool:
 
 def _register_failed_login(ip: str) -> None:
     _login_attempts[ip].append(datetime.utcnow())
+
+
+def get_user_permissoes(user: dict) -> list:
+    """Retorna lista de permissões do usuário com base no seu perfil atribuído."""
+    if user.get('role') == 'admin':
+        return PERMISSOES_IDS[:]
+
+    perfil_id = user.get('perfil_id')
+    if perfil_id:
+        cfg = load_config()
+        perfil = next((p for p in cfg.get('perfis', []) if p['id'] == perfil_id), None)
+        if perfil:
+            return perfil.get('permissoes', [])
+
+    # Fallback por role
+    role = user.get('role', 'funcionario')
+    if role == 'supervisor':
+        return ['dashboard', 'acompanhamento', 'ver_ticket', 'atualizar_ticket', 'comentar_ticket', 'meu_perfil']
+    return ['dashboard', 'abrir_ticket', 'acompanhamento', 'ver_ticket', 'comentar_ticket', 'meu_perfil']
 
 
 # ─────────────────────────────────────────
@@ -136,6 +164,25 @@ def save_tickets(tickets):
         json.dump(tickets, f, ensure_ascii=False, indent=2)
 
 
+def get_default_perfis():
+    return [
+        {
+            'id': 'perfil-supervisor',
+            'nome': 'Supervisor',
+            'descricao': 'Acompanha tickets e atualiza status',
+            'permissoes': ['dashboard', 'acompanhamento', 'ver_ticket', 'atualizar_ticket', 'comentar_ticket', 'meu_perfil'],
+            'padrao': True,
+        },
+        {
+            'id': 'perfil-funcionario',
+            'nome': 'Funcionário',
+            'descricao': 'Abre e acompanha seus próprios tickets',
+            'permissoes': ['dashboard', 'abrir_ticket', 'acompanhamento', 'ver_ticket', 'comentar_ticket', 'meu_perfil'],
+            'padrao': True,
+        },
+    ]
+
+
 def get_default_config():
     return {
         'ip_control': {
@@ -164,7 +211,8 @@ def get_default_config():
             'cor_texto':         '#0f172a',
             'nome_sistema':      'Tickets',
             'logo_filename':     None,
-        }
+        },
+        'perfis': get_default_perfis(),
     }
 
 
@@ -212,16 +260,22 @@ def get_role_label(role):
 
 
 app.jinja_env.globals['get_role_label'] = get_role_label
+app.jinja_env.globals['PERMISSOES'] = PERMISSOES
 
 
 @app.context_processor
 def inject_global_config():
     cfg = load_config()
     pers = cfg.get('personalizacao', {})
+    perfis = cfg.get('perfis', [])
+    perfis_dict = {p['id']: p for p in perfis}
     return {
         'cfg_global': cfg,
         'g_nome_sistema': pers.get('nome_sistema', 'Tickets'),
         'g_logo': pers.get('logo_filename'),
+        'g_permissoes': session.get('permissoes', []),
+        'g_perfis': perfis,
+        'g_perfis_dict': perfis_dict,
         'now': get_brasilia_time(),
     }
 
@@ -259,6 +313,24 @@ def role_required(*roles):
     return decorator
 
 
+def permission_required(perm):
+    """Verifica se o usuário tem a permissão. Admin sempre passa."""
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if session.get('role') == 'admin':
+                return f(*args, **kwargs)
+            if perm not in session.get('permissoes', []):
+                return render_template(
+                    'acesso_negado.html',
+                    motivo='permissao',
+                    hora=get_brasilia_time().strftime('%d/%m/%Y %H:%M:%S')
+                ), 403
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
+
+
 # ─────────────────────────────────────────
 #  ACCESS CONTROL MIDDLEWARE
 # ─────────────────────────────────────────
@@ -274,7 +346,6 @@ def check_access_controls():
     cfg = load_config()
     now = get_brasilia_time()
 
-    # ── IP Control ──────────────────────────────────────
     ip_cfg = cfg.get('ip_control', {})
     if ip_cfg.get('enabled', False):
         client_ip = get_client_ip()
@@ -282,13 +353,10 @@ def check_access_controls():
         if allowed and client_ip not in allowed:
             session.clear()
             return render_template(
-                'acesso_negado.html',
-                motivo='ip',
-                ip=client_ip,
-                hora=now.strftime('%d/%m/%Y %H:%M:%S')
+                'acesso_negado.html', motivo='ip',
+                ip=client_ip, hora=now.strftime('%d/%m/%Y %H:%M:%S')
             ), 403
 
-    # ── Horário Control ─────────────────────────────────
     h_cfg = cfg.get('horario_control', {})
     if h_cfg.get('enabled', False) and request.endpoint not in ('login',):
         dia_atual = now.weekday()
@@ -310,12 +378,9 @@ def check_access_controls():
             fim_dia    = reg['fim']    if reg else '--'
             nome_dia   = reg['nome']   if reg else '—'
             return render_template(
-                'acesso_negado.html',
-                motivo='horario',
+                'acesso_negado.html', motivo='horario',
                 hora=now.strftime('%d/%m/%Y %H:%M:%S'),
-                nome_dia=nome_dia,
-                inicio=inicio_dia,
-                fim=fim_dia
+                nome_dia=nome_dia, inicio=inicio_dia, fim=fim_dia
             ), 403
 
     return None
@@ -348,12 +413,18 @@ def login():
                      if u['username'] == username and u.get('ativo', True)), None)
 
         if user and verify_password(user['password'], password):
-            # Migra senha plaintext para hash automaticamente
             if not _is_hashed(user['password']):
                 user['password'] = hash_password(password)
                 save_users(users)
-            session.update({'user_id': user['id'], 'username': user['username'],
-                            'name': user['name'], 'role': user['role']})
+            permissoes = get_user_permissoes(user)
+            session.update({
+                'user_id':   user['id'],
+                'username':  user['username'],
+                'name':      user['name'],
+                'role':      user['role'],
+                'permissoes': permissoes,
+                'perfil_id': user.get('perfil_id'),
+            })
             return redirect(url_for('dashboard'))
 
         _register_failed_login(client_ip)
@@ -379,6 +450,7 @@ def acesso_negado():
 
 @app.route('/dashboard')
 @login_required
+@permission_required('dashboard')
 def dashboard():
     tickets = load_tickets()
     if session['role'] == 'funcionario':
@@ -402,15 +474,13 @@ def dashboard():
 
 @app.route('/abrir-ticket', methods=['GET', 'POST'])
 @login_required
+@permission_required('abrir_ticket')
 def abrir_ticket():
-    if session['role'] == 'supervisor':
-        return redirect(url_for('dashboard'))
-
     error = None
     if request.method == 'POST':
-        nome      = request.form.get('nome', '').strip()
+        nome       = request.form.get('nome', '').strip()
         ocorrencia = request.form.get('ocorrencia', '').strip()
-        sistema   = request.form.get('sistema', '')
+        sistema    = request.form.get('sistema', '')
 
         if not nome or not ocorrencia or not sistema:
             error = 'Preencha todos os campos obrigatórios.'
@@ -457,6 +527,7 @@ def abrir_ticket():
 
 @app.route('/acompanhamento')
 @login_required
+@permission_required('acompanhamento')
 def acompanhamento():
     tickets = load_tickets()
     if session['role'] == 'funcionario':
@@ -481,6 +552,7 @@ def acompanhamento():
 
 @app.route('/ticket/<ticket_id>')
 @login_required
+@permission_required('ver_ticket')
 def ver_ticket(ticket_id):
     tickets = load_tickets()
     ticket = next((t for t in tickets if t['id'] == ticket_id), None)
@@ -493,9 +565,8 @@ def ver_ticket(ticket_id):
 
 @app.route('/ticket/<ticket_id>/atualizar', methods=['POST'])
 @login_required
+@permission_required('atualizar_ticket')
 def atualizar_ticket(ticket_id):
-    if session['role'] == 'funcionario':
-        return redirect(url_for('ver_ticket', ticket_id=ticket_id))
     tickets = load_tickets()
     ticket = next((t for t in tickets if t['id'] == ticket_id), None)
     if not ticket:
@@ -521,7 +592,6 @@ def excluir_ticket(ticket_id):
     tickets = load_tickets()
     ticket = next((t for t in tickets if t['id'] == ticket_id), None)
     if ticket:
-        # Remove arquivo anexo se existir
         if ticket.get('arquivo') and ticket['arquivo'].get('filename'):
             path = os.path.join(UPLOADS_DIR, ticket['arquivo']['filename'])
             if os.path.exists(path):
@@ -533,6 +603,7 @@ def excluir_ticket(ticket_id):
 
 @app.route('/ticket/<ticket_id>/comentar', methods=['POST'])
 @login_required
+@permission_required('comentar_ticket')
 def comentar_ticket(ticket_id):
     tickets = load_tickets()
     ticket = next((t for t in tickets if t['id'] == ticket_id), None)
@@ -569,11 +640,14 @@ def configuracoes():
         'total_tickets':  len(tickets),
         'abertos':        sum(1 for t in tickets if t['status'] == 'Aberto'),
     }
-    current_ip = get_client_ip()
+    current_ip  = get_client_ip()
+    perfis      = cfg.get('perfis', [])
+    perfis_dict = {p['id']: p for p in perfis}
     return render_template('configuracoes.html',
                            users=users, cfg=cfg, tab=tab,
                            stats=stats, current_ip=current_ip,
-                           msg=msg, err=err)
+                           msg=msg, err=err,
+                           perfis=perfis, perfis_dict=perfis_dict)
 
 
 @app.route('/admin')
@@ -595,6 +669,7 @@ def cfg_criar_usuario():
     name     = request.form.get('name', '').strip()
     role     = request.form.get('role', 'funcionario')
     email    = request.form.get('email', '').strip()
+    perfil_id = request.form.get('perfil_id', '').strip() or None
 
     if not (username and password and name):
         return redirect(url_for('configuracoes', tab='usuarios', err='campos_obrigatorios'))
@@ -603,9 +678,18 @@ def cfg_criar_usuario():
     if role not in ROLES_VALIDOS:
         role = 'funcionario'
 
-    users.append({'id': str(uuid.uuid4()), 'username': username,
-                  'password': hash_password(password), 'name': name,
-                  'role': role, 'email': email, 'ativo': True})
+    # Valida perfil_id
+    if perfil_id:
+        cfg = load_config()
+        if not any(p['id'] == perfil_id for p in cfg.get('perfis', [])):
+            perfil_id = None
+
+    novo = {'id': str(uuid.uuid4()), 'username': username,
+            'password': hash_password(password), 'name': name,
+            'role': role, 'email': email, 'ativo': True}
+    if perfil_id:
+        novo['perfil_id'] = perfil_id
+    users.append(novo)
     save_users(users)
     return redirect(url_for('configuracoes', tab='usuarios', msg='usuario_criado'))
 
@@ -628,13 +712,33 @@ def cfg_toggle_usuario(user_id):
 @login_required
 @role_required('admin')
 def cfg_alterar_senha(user_id):
-    users     = load_users()
-    user      = next((u for u in users if u['id'] == user_id), None)
+    users      = load_users()
+    user       = next((u for u in users if u['id'] == user_id), None)
     nova_senha = request.form.get('nova_senha', '').strip()
     if user and nova_senha and len(nova_senha) >= 4:
         user['password'] = hash_password(nova_senha)
         save_users(users)
     return redirect(url_for('configuracoes', tab='usuarios', msg='senha_alterada'))
+
+
+@app.route('/configuracoes/usuario/<user_id>/perfil', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_alterar_perfil_usuario(user_id):
+    users     = load_users()
+    user      = next((u for u in users if u['id'] == user_id), None)
+    if user:
+        perfil_id = request.form.get('perfil_id', '').strip() or None
+        if perfil_id:
+            cfg = load_config()
+            if not any(p['id'] == perfil_id for p in cfg.get('perfis', [])):
+                perfil_id = None
+        if perfil_id:
+            user['perfil_id'] = perfil_id
+        elif 'perfil_id' in user:
+            del user['perfil_id']
+        save_users(users)
+    return redirect(url_for('configuracoes', tab='usuarios', msg='perfil_atualizado'))
 
 
 # ── IPs Permitidos ────────────────────────
@@ -725,6 +829,59 @@ def cfg_sistema_remover():
     return redirect(url_for('configuracoes', tab='sistemas', msg='sistema_removido'))
 
 
+# ── Perfis de Acesso ──────────────────────
+
+@app.route('/configuracoes/perfil/criar', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_perfil_criar():
+    cfg  = load_config()
+    nome = request.form.get('nome', '').strip()
+    desc = request.form.get('descricao', '').strip()
+    perms = [p for p in request.form.getlist('permissoes') if p in PERMISSOES_IDS]
+
+    if not nome:
+        return redirect(url_for('configuracoes', tab='perfis', err='nome_obrigatorio'))
+
+    cfg.setdefault('perfis', []).append({
+        'id':         str(uuid.uuid4()),
+        'nome':       nome,
+        'descricao':  desc,
+        'permissoes': perms,
+        'padrao':     False,
+    })
+    save_config(cfg)
+    return redirect(url_for('configuracoes', tab='perfis', msg='perfil_criado'))
+
+
+@app.route('/configuracoes/perfil/<perfil_id>/atualizar', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_perfil_atualizar(perfil_id):
+    cfg    = load_config()
+    perfil = next((p for p in cfg.get('perfis', []) if p['id'] == perfil_id), None)
+    if perfil:
+        novo_nome = request.form.get('nome', '').strip()
+        if novo_nome:
+            perfil['nome'] = novo_nome
+        perfil['descricao'] = request.form.get('descricao', '').strip()
+        perfil['permissoes'] = [p for p in request.form.getlist('permissoes') if p in PERMISSOES_IDS]
+        save_config(cfg)
+    return redirect(url_for('configuracoes', tab='perfis', msg='perfil_atualizado'))
+
+
+@app.route('/configuracoes/perfil/<perfil_id>/excluir', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_perfil_excluir(perfil_id):
+    cfg    = load_config()
+    perfil = next((p for p in cfg.get('perfis', []) if p['id'] == perfil_id), None)
+    if perfil and not perfil.get('padrao', False):
+        cfg['perfis'] = [p for p in cfg['perfis'] if p['id'] != perfil_id]
+        save_config(cfg)
+    return redirect(url_for('configuracoes', tab='perfis', msg='perfil_removido'))
+
+
 # ── Personalização ────────────────────────
 
 @app.route('/configuracoes/personalizacao/salvar', methods=['POST'])
@@ -790,15 +947,16 @@ def cfg_logo_remover():
 
 @app.route('/meu-perfil', methods=['GET', 'POST'])
 @login_required
+@permission_required('meu_perfil')
 def meu_perfil():
     users   = load_users()
     user    = next((u for u in users if u['id'] == session['user_id']), None)
     success = error = None
 
     if request.method == 'POST':
-        senha_atual  = request.form.get('senha_atual', '').strip()
-        nova_senha   = request.form.get('nova_senha', '').strip()
-        confirmar    = request.form.get('confirmar_senha', '').strip()
+        senha_atual = request.form.get('senha_atual', '').strip()
+        nova_senha  = request.form.get('nova_senha', '').strip()
+        confirmar   = request.form.get('confirmar_senha', '').strip()
 
         if not verify_password(user['password'], senha_atual):
             error = 'Senha atual incorreta.'
@@ -855,10 +1013,12 @@ def init_data():
              'role': 'admin', 'email': 'admin@tickets.local', 'ativo': True},
             {'id': '2', 'username': 'supervisor',
              'password': hash_password('super123'), 'name': 'Supervisor',
-             'role': 'supervisor', 'email': 'supervisor@tickets.local', 'ativo': True},
+             'role': 'supervisor', 'email': 'supervisor@tickets.local', 'ativo': True,
+             'perfil_id': 'perfil-supervisor'},
             {'id': '3', 'username': 'funcionario',
              'password': hash_password('func123'), 'name': 'Funcionário',
-             'role': 'funcionario', 'email': 'funcionario@tickets.local', 'ativo': True},
+             'role': 'funcionario', 'email': 'funcionario@tickets.local', 'ativo': True,
+             'perfil_id': 'perfil-funcionario'},
         ])
 
     if not os.path.exists(tickets_file):

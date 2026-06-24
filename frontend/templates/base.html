@@ -45,24 +45,28 @@
     </div>
 
     <ul class="sidebar-menu">
+      {% if session.role == 'admin' or 'dashboard' in g_permissoes %}
       <li>
         <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">
           <i class="fa-solid fa-chart-pie"></i> Dashboard
         </a>
       </li>
-      {% if session.role in ['admin', 'funcionario'] %}
+      {% endif %}
+      {% if session.role == 'admin' or 'abrir_ticket' in g_permissoes %}
       <li>
         <a href="{{ url_for('abrir_ticket') }}" class="{{ 'active' if request.endpoint == 'abrir_ticket' else '' }}">
           <i class="fa-solid fa-circle-plus"></i> Abrir Ticket
         </a>
       </li>
       {% endif %}
+      {% if session.role == 'admin' or 'acompanhamento' in g_permissoes %}
       <li>
         <a href="{{ url_for('acompanhamento') }}" class="{{ 'active' if request.endpoint in ['acompanhamento', 'ver_ticket'] else '' }}">
           <i class="fa-solid fa-list-check"></i>
           {% if session.role == 'funcionario' %}Meus Tickets{% else %}Acompanhamento{% endif %}
         </a>
       </li>
+      {% endif %}
       {% if session.role == 'admin' %}
       <li class="menu-section">Administração</li>
       <li>

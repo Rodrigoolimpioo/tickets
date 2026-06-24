@@ -91,7 +91,7 @@
     </div>
 
     <span class="motivo-badge">
-      {% if motivo == 'ip' %}Bloqueio por IP{% elif motivo == 'horario' %}Fora do Horário{% else %}Acesso Negado{% endif %}
+      {% if motivo == 'ip' %}Bloqueio por IP{% elif motivo == 'horario' %}Fora do Horário{% elif motivo == 'permissao' %}Sem Permissão{% else %}Acesso Negado{% endif %}
     </span>
 
     <h1>Acesso Negado</h1>
@@ -140,6 +140,21 @@
       {% endif %}
     </div>
 
+    {% elif motivo == 'permissao' %}
+    <p class="subtitle">
+      Sua conta não tem permissão para acessar esta funcionalidade.<br>
+      Entre em contato com o administrador para ajustar seu perfil de acesso.
+    </p>
+    <div class="info-block">
+      <div class="info-row">
+        <span class="info-label">Horário da tentativa</span>
+        <span class="info-value">{{ hora }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Motivo</span>
+        <span class="info-value">Permissão não concedida no perfil</span>
+      </div>
+    </div>
     {% else %}
     <p class="subtitle">Você não tem permissão para acessar este recurso.</p>
     {% endif %}
