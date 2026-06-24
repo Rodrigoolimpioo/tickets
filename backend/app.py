@@ -514,6 +514,23 @@ def atualizar_ticket(ticket_id):
     return redirect(url_for('ver_ticket', ticket_id=ticket_id))
 
 
+@app.route('/ticket/<ticket_id>/excluir', methods=['POST'])
+@login_required
+@role_required('admin')
+def excluir_ticket(ticket_id):
+    tickets = load_tickets()
+    ticket = next((t for t in tickets if t['id'] == ticket_id), None)
+    if ticket:
+        # Remove arquivo anexo se existir
+        if ticket.get('arquivo') and ticket['arquivo'].get('filename'):
+            path = os.path.join(UPLOADS_DIR, ticket['arquivo']['filename'])
+            if os.path.exists(path):
+                os.remove(path)
+        tickets = [t for t in tickets if t['id'] != ticket_id]
+        save_tickets(tickets)
+    return redirect(url_for('acompanhamento'))
+
+
 @app.route('/ticket/<ticket_id>/comentar', methods=['POST'])
 @login_required
 def comentar_ticket(ticket_id):

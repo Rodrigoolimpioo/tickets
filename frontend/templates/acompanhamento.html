@@ -66,7 +66,7 @@
           <th style="width:140px">Aberto por</th>
           {% endif %}
           <th style="width:155px">Data/Hora</th>
-          <th style="width:60px"></th>
+          <th style="width:{% if session.role == 'admin' %}90px{% else %}60px{% endif %}"></th>
         </tr>
       </thead>
       <tbody>
@@ -91,10 +91,16 @@
           <td class="text-muted small">{{ t.criado_por }}</td>
           {% endif %}
           <td class="text-muted small">{{ t.data_formatada }}</td>
-          <td>
-            <a href="{{ url_for('ver_ticket', ticket_id=t.id) }}" class="btn-acao" onclick="event.stopPropagation()">
+          <td onclick="event.stopPropagation()" style="white-space:nowrap">
+            <a href="{{ url_for('ver_ticket', ticket_id=t.id) }}" class="btn-acao">
               <i class="fa-solid fa-eye"></i>
             </a>
+            {% if session.role == 'admin' %}
+            <button type="button" class="btn-acao btn-acao-danger"
+                    onclick="confirmarExclusao('{{ t.id }}','{{ t.numero }}','{{ t.nome | replace(\"'\", \"&#39;\") }}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
@@ -113,4 +119,45 @@
   </div>
   {% endif %}
 </div>
+
+{% if session.role == 'admin' %}
+<!-- Modal de confirmação de exclusão -->
+<div id="modalExclusao" class="modal-overlay" style="display:none" onclick="fecharModal(event)">
+  <div class="modal-box">
+    <div class="modal-icon-danger">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <h3 class="modal-title">Excluir ticket?</h3>
+    <p class="modal-desc">
+      <strong id="modalTicketNum"></strong> — <span id="modalTicketNome"></span>
+    </p>
+    <p class="modal-warn">Esta ação é irreversível. O ticket e seu anexo serão removidos permanentemente.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn-modal-cancel" onclick="document.getElementById('modalExclusao').style.display='none'">
+        Cancelar
+      </button>
+      <form id="formExclusao" method="POST" style="display:inline">
+        <button type="submit" class="btn-modal-confirm">
+          <i class="fa-solid fa-trash"></i> Excluir
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function confirmarExclusao(id, num, nome) {
+  document.getElementById('modalTicketNum').textContent = num;
+  document.getElementById('modalTicketNome').textContent = nome;
+  document.getElementById('formExclusao').action = '/ticket/' + id + '/excluir';
+  document.getElementById('modalExclusao').style.display = 'flex';
+}
+function fecharModal(e) {
+  if (e.target.id === 'modalExclusao') document.getElementById('modalExclusao').style.display = 'none';
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') document.getElementById('modalExclusao').style.display = 'none';
+});
+</script>
+{% endif %}
 {% endblock %}
