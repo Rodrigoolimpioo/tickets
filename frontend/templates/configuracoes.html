@@ -916,7 +916,11 @@ function resetarPadrao() {
         </div>
         <div style="display:flex; gap:8px; align-items:center">
           <button type="button" class="btn-acao" title="Editar perfil"
-                  onclick="abrirModalEditarPerfil('{{ perfil.id }}', '{{ perfil.nome }}', '{{ perfil.descricao }}', {{ perfil.permissoes | tojson }})">
+                  data-pid="{{ perfil.id }}"
+                  data-pnome="{{ perfil.nome }}"
+                  data-pdesc="{{ perfil.descricao }}"
+                  data-pperms="{{ perfil.permissoes | tojson | forceescape }}"
+                  onclick="abrirModalEditarPerfil(this)">
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
           {% if not perfil.get('padrao') %}
@@ -1031,7 +1035,11 @@ function resetarPadrao() {
 </div>
 
 <script>
-function abrirModalEditarPerfil(id, nome, desc, perms) {
+function abrirModalEditarPerfil(btn) {
+  const id    = btn.dataset.pid;
+  const nome  = btn.dataset.pnome;
+  const desc  = btn.dataset.pdesc;
+  const perms = JSON.parse(btn.dataset.pperms);
   document.getElementById('editPerfilNome').value = nome;
   document.getElementById('editPerfilDesc').value = desc;
   document.getElementById('formEditarPerfil').action = '/configuracoes/perfil/' + id + '/atualizar';
