@@ -894,10 +894,7 @@ function resetarPadrao() {
 </script>
 
 
-<!-- ════════════════════════════════════ -->
-<!-- ABA: PERFIS DE ACESSO                -->
-<!-- ════════════════════════════════════ -->
-{% elif tab == 'perfis' %}
+{% if tab == 'perfis' %}
 <div class="row g-3">
 
   <!-- LISTA DE PERFIS -->
@@ -1046,3 +1043,4 @@ function abrirModalEditarPerfil(id, nome, desc, perms) {
 </script>
 
 {% endif %}
+{% endblock %}
