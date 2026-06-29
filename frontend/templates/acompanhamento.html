@@ -97,7 +97,10 @@
             </a>
             {% if session.role == 'admin' %}
             <button type="button" class="btn-acao btn-acao-danger"
-                    onclick="confirmarExclusao('{{ t.id }}','{{ t.numero }}','{{ t.nome | replace(\"'\", \"&#39;\") }}')">
+                    data-id="{{ t.id }}"
+                    data-num="{{ t.numero }}"
+                    data-nome="{{ t.nome }}"
+                    onclick="confirmarExclusao(this)">
               <i class="fa-solid fa-trash"></i>
             </button>
             {% endif %}
@@ -146,10 +149,10 @@
 </div>
 
 <script>
-function confirmarExclusao(id, num, nome) {
-  document.getElementById('modalTicketNum').textContent = num;
-  document.getElementById('modalTicketNome').textContent = nome;
-  document.getElementById('formExclusao').action = '/ticket/' + id + '/excluir';
+function confirmarExclusao(btn) {
+  document.getElementById('modalTicketNum').textContent = btn.dataset.num;
+  document.getElementById('modalTicketNome').textContent = btn.dataset.nome;
+  document.getElementById('formExclusao').action = '/ticket/' + btn.dataset.id + '/excluir';
   document.getElementById('modalExclusao').style.display = 'flex';
 }
 function fecharModal(e) {
