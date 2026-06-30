@@ -33,6 +33,7 @@ app = Flask(
     static_folder=os.path.join(FRONTEND_DIR, 'static'),
 )
 app.secret_key = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
