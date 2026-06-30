@@ -250,6 +250,11 @@ def load_config():
     for key, val in defaults.items():
         if key not in cfg:
             cfg[key] = val
+    # Migra chaves novas dentro de personalizacao sem sobrescrever valores salvos
+    default_pers = defaults.get('personalizacao', {})
+    for key, val in default_pers.items():
+        if key not in cfg.get('personalizacao', {}):
+            cfg.setdefault('personalizacao', {})[key] = val
     return cfg
 
 

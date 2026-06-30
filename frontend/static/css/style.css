@@ -898,7 +898,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 10px 22px;
-  background: linear-gradient(135deg, #111111, #333333);
+  background: var(--blue);
   border: none;
   border-radius: 10px;
   color: white;
