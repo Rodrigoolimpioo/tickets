@@ -1,3 +1,17 @@
+// CSRF auto-inject em todos os formulários POST
+(function () {
+  var meta = document.querySelector('meta[name="csrf-token"]');
+  if (!meta) return;
+  var t = meta.content;
+  document.querySelectorAll('form').forEach(function (f) {
+    if (f.method.toLowerCase() === 'post' && !f.querySelector('[name="_csrf_token"]')) {
+      var i = document.createElement('input');
+      i.type = 'hidden'; i.name = '_csrf_token'; i.value = t;
+      f.appendChild(i);
+    }
+  });
+})();
+
 // Toggle sidebar (mobile)
 const sidebarToggle = document.getElementById('sidebarToggle');
 const sidebar = document.getElementById('sidebar');

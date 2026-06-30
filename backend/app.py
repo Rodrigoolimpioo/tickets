@@ -252,9 +252,13 @@ def load_config():
             cfg[key] = val
     # Migra chaves novas dentro de personalizacao sem sobrescrever valores salvos
     default_pers = defaults.get('personalizacao', {})
+    migrated = False
     for key, val in default_pers.items():
         if key not in cfg.get('personalizacao', {}):
             cfg.setdefault('personalizacao', {})[key] = val
+            migrated = True
+    if migrated:
+        save_config(cfg)
     return cfg
 
 
@@ -340,15 +344,19 @@ def login_required(f):
     return decorated
 
 
+def _deny(motivo: str):
+    return render_template(
+        'acesso_negado.html', motivo=motivo,
+        hora=get_brasilia_time().strftime('%d/%m/%Y %H:%M:%S')
+    ), 403
+
+
 def role_required(*roles):
     def decorator(f):
         @wraps(f)
         def decorated(*args, **kwargs):
             if session.get('role') not in roles:
-                return render_template(
-                    'acesso_negado.html', motivo='permissao',
-                    hora=get_brasilia_time().strftime('%d/%m/%Y %H:%M:%S')
-                ), 403
+                return _deny('permissao')
             return f(*args, **kwargs)
         return decorated
     return decorator
@@ -362,11 +370,7 @@ def permission_required(perm):
             if session.get('role') == 'admin':
                 return f(*args, **kwargs)
             if perm not in session.get('permissoes', []):
-                return render_template(
-                    'acesso_negado.html',
-                    motivo='permissao',
-                    hora=get_brasilia_time().strftime('%d/%m/%Y %H:%M:%S')
-                ), 403
+                return _deny('permissao')
             return f(*args, **kwargs)
         return decorated
     return decorator
@@ -389,10 +393,7 @@ def check_access_controls():
         token = request.form.get('_csrf_token', '') or request.headers.get('X-CSRF-Token', '')
         expected = get_csrf_token()
         if not token or not hmac.compare_digest(token, expected):
-            return render_template(
-                'acesso_negado.html', motivo='csrf',
-                hora=get_brasilia_time().strftime('%d/%m/%Y %H:%M:%S')
-            ), 403
+            return _deny('csrf')
 
     cfg = load_config()
     now = get_brasilia_time()
@@ -452,6 +453,9 @@ def login():
         return redirect(url_for('dashboard'))
     error = None
     if request.method == 'POST':
+        token = request.form.get('_csrf_token', '')
+        if not token or not hmac.compare_digest(token, get_csrf_token()):
+            return _deny('csrf')
         client_ip = get_client_ip()
         if _rate_limit_exceeded(client_ip):
             error = f'Muitas tentativas. Aguarde {_LOGIN_LOCKOUT_MIN} minutos.'
@@ -962,7 +966,7 @@ def cfg_personalizacao_salvar():
     p['cor_sidebar']       = valid_hex(request.form.get('cor_sidebar'),       p['cor_sidebar'])
     p['cor_sidebar_ativo'] = valid_hex(request.form.get('cor_sidebar_ativo'), p['cor_sidebar_ativo'])
     p['cor_texto']         = valid_hex(request.form.get('cor_texto'),         p['cor_texto'])
-    p['cor_sidebar_texto'] = valid_hex(request.form.get('cor_sidebar_texto'), p.get('cor_sidebar_texto', '#94a3b8'))
+    p['cor_sidebar_texto'] = valid_hex(request.form.get('cor_sidebar_texto'), p['cor_sidebar_texto'])
     p['nome_sistema']      = request.form.get('nome_sistema', 'Tickets').strip() or 'Tickets'
     save_config(cfg)
     return redirect(url_for('configuracoes', tab='personalizacao', msg='personalizacao_salva'))
