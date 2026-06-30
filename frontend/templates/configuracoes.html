@@ -149,6 +149,14 @@
               </td>
               <td>
                 <div class="action-btns">
+                  <button type="button" class="btn-acao" title="Alterar senha"
+                          onclick="abrirModalSenha('{{ u.id }}', '{{ u.name }}')">
+                    <i class="fa-solid fa-key"></i>
+                  </button>
+                  <button type="button" class="btn-acao" title="Alterar perfil de acesso"
+                          onclick="abrirModalPerfil('{{ u.id }}', '{{ u.name }}', '{{ u.get('perfil_id', '') }}')">
+                    <i class="fa-solid fa-id-badge"></i>
+                  </button>
                   {% if u.id != session.user_id %}
                   <form method="POST" action="{{ url_for('cfg_toggle_usuario', user_id=u.id) }}" style="display:inline">
                     <button type="submit"
@@ -157,18 +165,6 @@
                       <i class="fa-solid fa-{{ 'ban' if u.get('ativo', True) else 'check' }}"></i>
                     </button>
                   </form>
-                  <button type="button" class="btn-acao" title="Alterar senha"
-                          onclick="abrirModalSenha('{{ u.id }}', '{{ u.name }}')">
-                    <i class="fa-solid fa-key"></i>
-                  </button>
-                  {% if u.role != 'admin' %}
-                  <button type="button" class="btn-acao" title="Alterar perfil de acesso"
-                          onclick="abrirModalPerfil('{{ u.id }}', '{{ u.name }}', '{{ u.get('perfil_id', '') }}')">
-                    <i class="fa-solid fa-id-badge"></i>
-                  </button>
-                  {% endif %}
-                  {% else %}
-                  <span class="text-muted" style="font-size:12px">(você)</span>
                   {% endif %}
                 </div>
               </td>
