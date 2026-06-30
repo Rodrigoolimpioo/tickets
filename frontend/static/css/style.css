@@ -1433,6 +1433,16 @@ input[type="color"] {
   cursor: pointer;
   background: white;
 }
+input[type="color"].color-picker-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+}
 
 .logo-preview-box {
   display: flex;
