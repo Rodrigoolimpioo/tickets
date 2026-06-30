@@ -85,6 +85,8 @@
 <div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Perfil atualizado com sucesso!</div>
 {% elif msg == 'perfil_removido' %}
 <div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Perfil removido com sucesso!</div>
+{% elif msg == 'usuario_excluido' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Usuário excluído com sucesso!</div>
 {% endif %}
 
 {% if err == 'usuario_existe' %}
@@ -165,6 +167,12 @@
                       <i class="fa-solid fa-{{ 'ban' if u.get('ativo', True) else 'check' }}"></i>
                     </button>
                   </form>
+                  <button type="button" class="btn-acao btn-acao-danger" title="Excluir usuário"
+                          data-uid="{{ u.id }}"
+                          data-uname="{{ u.name }}"
+                          onclick="confirmarExclusaoUsuario(this)">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
                   {% endif %}
                 </div>
               </td>
@@ -756,6 +764,28 @@ function resetarPadrao() {
 </script>
 {% endif %}
 
+<!-- MODAL EXCLUIR USUÁRIO -->
+<div id="modalExcluirUsuario" class="modal-overlay" style="display:none" onclick="fecharModalExclusao(event)">
+  <div class="modal-box">
+    <div class="modal-icon-danger">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <h3 class="modal-title">Excluir usuário?</h3>
+    <p class="modal-desc"><span id="modalExcluirNome"></span></p>
+    <p class="modal-warn">Esta ação é irreversível. O usuário será removido permanentemente do sistema.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn-modal-cancel" onclick="document.getElementById('modalExcluirUsuario').style.display='none'">
+        Cancelar
+      </button>
+      <form id="formExcluirUsuario" method="POST" style="display:inline">
+        <button type="submit" class="btn-modal-confirm">
+          <i class="fa-solid fa-trash"></i> Excluir
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL ALTERAR PERFIL DE USUÁRIO -->
 <div class="modal fade" id="modalPerfil" tabindex="-1">
   <div class="modal-dialog modal-sm">
@@ -819,6 +849,18 @@ function resetarPadrao() {
 </div>
 
 <script>
+  function confirmarExclusaoUsuario(btn) {
+    document.getElementById('modalExcluirNome').textContent = btn.dataset.uname;
+    document.getElementById('formExcluirUsuario').action = '/configuracoes/usuario/' + btn.dataset.uid + '/excluir';
+    document.getElementById('modalExcluirUsuario').style.display = 'flex';
+  }
+  function fecharModalExclusao(e) {
+    if (e.target.id === 'modalExcluirUsuario') document.getElementById('modalExcluirUsuario').style.display = 'none';
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') document.getElementById('modalExcluirUsuario').style.display = 'none';
+  });
+
   function abrirModalSenha(userId, userName) {
     document.getElementById('modalUserName').textContent = 'Usuário: ' + userName;
     document.getElementById('formSenha').action = '/configuracoes/usuario/' + userId + '/senha';

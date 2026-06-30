@@ -743,6 +743,18 @@ def cfg_alterar_perfil_usuario(user_id):
 
 # ── IPs Permitidos ────────────────────────
 
+@app.route('/configuracoes/usuario/<user_id>/excluir', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_excluir_usuario(user_id):
+    if user_id == session['user_id']:
+        return redirect(url_for('configuracoes', tab='usuarios'))
+    users = load_users()
+    users = [u for u in users if u['id'] != user_id]
+    save_users(users)
+    return redirect(url_for('configuracoes', tab='usuarios', msg='usuario_excluido'))
+
+
 @app.route('/configuracoes/ip/toggle', methods=['POST'])
 @login_required
 @role_required('admin')
