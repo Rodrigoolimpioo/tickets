@@ -853,15 +853,16 @@ body {
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
-  background: var(--blue-light);
-  border: 1px solid #cccccc;
+  background: linear-gradient(135deg, #111111, #333333);
+  border: none;
   border-radius: 10px;
   font-size: 13px;
-  color: #111111;
+  color: #ffffff;
   margin-bottom: 20px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
 }
 
-.info-box i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.info-box i { font-size: 16px; flex-shrink: 0; margin-top: 1px; color: #ffffff; }
 
 /* FORM ACTIONS */
 .form-actions {
