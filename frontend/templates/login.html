@@ -126,6 +126,7 @@
     {% endif %}
 
     <form method="POST" action="{{ url_for('login') }}">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
       <div class="mb-4">
         <label class="form-label">Usuário</label>
         <div class="input-group">

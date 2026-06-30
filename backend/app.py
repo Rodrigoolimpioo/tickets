@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory
+import hmac
+import ipaddress
 import json
 import os
 import re
@@ -36,6 +38,8 @@ app.secret_key = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False   # Mudar para True em produção com HTTPS
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 UPLOADS_DIR = os.path.join(BASE_DIR, 'uploads')
@@ -49,7 +53,9 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 STATUS_LIST = ['Aberto', 'Em Andamento', 'Resolvido', 'Fechado']
 ROLES_VALIDOS = {'admin', 'supervisor', 'funcionario'}
-HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
+HEX_COLOR_RE  = re.compile(r'^#[0-9A-Fa-f]{6}$')
+TIME_RE        = re.compile(r'^(?:[01]\d|2[0-3]):[0-5]\d$')
+PASSWORD_MIN   = 8
 
 # Permissões disponíveis no sistema
 PERMISSOES = [
@@ -84,6 +90,24 @@ _LOGIN_LOCKOUT_MIN = 15
 
 def valid_hex(value: str, default: str) -> str:
     return value if HEX_COLOR_RE.match(value or '') else default
+
+
+def valid_ip(ip: str) -> bool:
+    try:
+        ipaddress.ip_address(ip)
+        return True
+    except ValueError:
+        return False
+
+
+def valid_time(val: str) -> bool:
+    return bool(TIME_RE.match(val or ''))
+
+
+def get_csrf_token() -> str:
+    if '_csrf' not in session:
+        session['_csrf'] = secrets.token_hex(32)
+    return session['_csrf']
 
 
 def _is_hashed(stored: str) -> bool:
@@ -139,10 +163,8 @@ def get_brasilia_time():
 
 
 def get_client_ip():
-    fwd = request.headers.get('X-Forwarded-For')
-    if fwd:
-        return fwd.split(',')[0].strip()
-    return request.remote_addr or '0.0.0.0'
+    # Não confiar em X-Forwarded-For — pode ser falsificado para burlar controle de IP
+    return request.remote_addr or '127.0.0.1'
 
 
 def load_users():
@@ -261,7 +283,8 @@ def get_role_label(role):
 
 
 app.jinja_env.globals['get_role_label'] = get_role_label
-app.jinja_env.globals['PERMISSOES'] = PERMISSOES
+app.jinja_env.globals['PERMISSOES']    = PERMISSOES
+app.jinja_env.globals['csrf_token']    = get_csrf_token
 
 
 @app.context_processor
@@ -287,6 +310,14 @@ def add_security_headers(response):
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        "font-src 'self' https://cdnjs.cloudflare.com; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self';"
+    )
     return response
 
 
@@ -308,7 +339,10 @@ def role_required(*roles):
         @wraps(f)
         def decorated(*args, **kwargs):
             if session.get('role') not in roles:
-                return redirect(url_for('dashboard'))
+                return render_template(
+                    'acesso_negado.html', motivo='permissao',
+                    hora=get_brasilia_time().strftime('%d/%m/%Y %H:%M:%S')
+                ), 403
             return f(*args, **kwargs)
         return decorated
     return decorator
@@ -343,6 +377,16 @@ ENDPOINTS_LIVRES = {'static', 'uploaded_file', 'serve_logo', 'acesso_negado', 'l
 def check_access_controls():
     if request.endpoint in ENDPOINTS_LIVRES or request.endpoint is None:
         return None
+
+    # Proteção CSRF em todos os POSTs
+    if request.method == 'POST':
+        token = request.form.get('_csrf_token', '') or request.headers.get('X-CSRF-Token', '')
+        expected = get_csrf_token()
+        if not token or not hmac.compare_digest(token, expected):
+            return render_template(
+                'acesso_negado.html', motivo='csrf',
+                hora=get_brasilia_time().strftime('%d/%m/%Y %H:%M:%S')
+            ), 403
 
     cfg = load_config()
     now = get_brasilia_time()
@@ -418,6 +462,7 @@ def login():
                 user['password'] = hash_password(password)
                 save_users(users)
             permissoes = get_user_permissoes(user)
+            session.permanent = True
             session.update({
                 'user_id':   user['id'],
                 'username':  user['username'],
@@ -716,7 +761,7 @@ def cfg_alterar_senha(user_id):
     users      = load_users()
     user       = next((u for u in users if u['id'] == user_id), None)
     nova_senha = request.form.get('nova_senha', '').strip()
-    if user and nova_senha and len(nova_senha) >= 4:
+    if user and nova_senha and len(nova_senha) >= PASSWORD_MIN:
         user['password'] = hash_password(nova_senha)
         save_users(users)
     return redirect(url_for('configuracoes', tab='usuarios', msg='senha_alterada'))
@@ -772,7 +817,7 @@ def cfg_ip_toggle():
 def cfg_ip_adicionar():
     cfg = load_config()
     ip  = request.form.get('ip', '').strip()
-    if ip and ip not in cfg['ip_control']['ips']:
+    if ip and valid_ip(ip) and ip not in cfg['ip_control']['ips']:
         cfg['ip_control']['ips'].append(ip)
         save_config(cfg)
     return redirect(url_for('configuracoes', tab='ips'))
@@ -810,8 +855,10 @@ def cfg_horario_atualizar():
     for h in cfg['horario_control']['horarios']:
         dia = str(h['dia'])
         h['ativo']  = f'ativo_{dia}' in request.form
-        h['inicio'] = request.form.get(f'inicio_{dia}', h['inicio'])
-        h['fim']    = request.form.get(f'fim_{dia}',    h['fim'])
+        t_inicio = request.form.get(f'inicio_{dia}', h['inicio'])
+        t_fim    = request.form.get(f'fim_{dia}',    h['fim'])
+        h['inicio'] = t_inicio if valid_time(t_inicio) else h['inicio']
+        h['fim']    = t_fim    if valid_time(t_fim)    else h['fim']
     save_config(cfg)
     return redirect(url_for('configuracoes', tab='horarios', msg='horarios_salvos'))
 
@@ -975,8 +1022,8 @@ def meu_perfil():
             error = 'Senha atual incorreta.'
         elif nova_senha != confirmar:
             error = 'As senhas não coincidem.'
-        elif len(nova_senha) < 4:
-            error = 'A nova senha deve ter pelo menos 4 caracteres.'
+        elif len(nova_senha) < PASSWORD_MIN:
+            error = f'A nova senha deve ter pelo menos {PASSWORD_MIN} caracteres.'
         else:
             user['password'] = hash_password(nova_senha)
             save_users(users)

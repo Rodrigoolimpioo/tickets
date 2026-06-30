@@ -106,5 +106,21 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+(function() {
+  var t = '{{ csrf_token() }}';
+  function injectCSRF() {
+    document.querySelectorAll('form').forEach(function(f) {
+      if (f.method.toLowerCase() === 'post' && !f.querySelector('[name="_csrf_token"]')) {
+        var i = document.createElement('input');
+        i.type = 'hidden'; i.name = '_csrf_token'; i.value = t;
+        f.appendChild(i);
+      }
+    });
+  }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', injectCSRF); }
+  else { injectCSRF(); }
+})();
+</script>
 </body>
 </html>

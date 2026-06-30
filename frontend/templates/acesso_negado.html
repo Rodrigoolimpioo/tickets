@@ -91,7 +91,7 @@
     </div>
 
     <span class="motivo-badge">
-      {% if motivo == 'ip' %}Bloqueio por IP{% elif motivo == 'horario' %}Fora do Horário{% elif motivo == 'permissao' %}Sem Permissão{% else %}Acesso Negado{% endif %}
+      {% if motivo == 'ip' %}Bloqueio por IP{% elif motivo == 'horario' %}Fora do Horário{% elif motivo == 'permissao' %}Sem Permissão{% elif motivo == 'csrf' %}Requisição Inválida{% else %}Acesso Negado{% endif %}
     </span>
 
     <h1>Acesso Negado</h1>
