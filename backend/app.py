@@ -226,14 +226,15 @@ def get_default_config():
         },
         'sistemas': ['Teknisa', 'Kdápio (Callcenter)', 'Lumia', 'iFood'],
         'personalizacao': {
-            'cor_botao':         '#111111',
-            'cor_botao_light':   '#f0f0f0',
-            'cor_fundo':         '#f1f5f9',
-            'cor_sidebar':       '#0f172a',
-            'cor_sidebar_ativo': '#111111',
-            'cor_texto':         '#0f172a',
-            'nome_sistema':      'Tickets',
-            'logo_filename':     None,
+            'cor_botao':          '#111111',
+            'cor_botao_light':    '#f0f0f0',
+            'cor_fundo':          '#f1f5f9',
+            'cor_sidebar':        '#0f172a',
+            'cor_sidebar_ativo':  '#111111',
+            'cor_texto':          '#0f172a',
+            'cor_sidebar_texto':  '#94a3b8',
+            'nome_sistema':       'Tickets',
+            'logo_filename':      None,
         },
         'perfis': get_default_perfis(),
     }
@@ -956,6 +957,7 @@ def cfg_personalizacao_salvar():
     p['cor_sidebar']       = valid_hex(request.form.get('cor_sidebar'),       p['cor_sidebar'])
     p['cor_sidebar_ativo'] = valid_hex(request.form.get('cor_sidebar_ativo'), p['cor_sidebar_ativo'])
     p['cor_texto']         = valid_hex(request.form.get('cor_texto'),         p['cor_texto'])
+    p['cor_sidebar_texto'] = valid_hex(request.form.get('cor_sidebar_texto'), p.get('cor_sidebar_texto', '#94a3b8'))
     p['nome_sistema']      = request.form.get('nome_sistema', 'Tickets').strip() or 'Tickets'
     save_config(cfg)
     return redirect(url_for('configuracoes', tab='personalizacao', msg='personalizacao_salva'))
