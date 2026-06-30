@@ -1392,6 +1392,33 @@ body {
   flex-shrink: 0;
 }
 
+.hex-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.color-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.color-swatch:hover {
+  transform: scale(1.06);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+}
+.hex-inp {
+  width: 110px !important;
+  font-family: monospace;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 .color-info { flex: 1; }
 .color-label { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
 .color-desc  { font-size: 12px; color: var(--text-secondary); }
