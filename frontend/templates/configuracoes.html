@@ -616,7 +616,7 @@
             <div class="color-swatch" id="prev_botao" style="background:{{ p.cor_botao }}"
                  onclick="document.getElementById('_pick_cor_botao').click()" title="Abrir seletor visual"></div>
             <input type="color" id="_pick_cor_botao" value="{{ p.cor_botao }}" tabindex="-1"
-                   style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"
+                   style="position:absolute;width:0;height:0;opacity:0;overflow:hidden;border:0;padding:0"
                    oninput="syncFromPicker(this,'cor_botao','prev_botao')">
             <input type="text" name="cor_botao" id="cor_botao" class="form-inp hex-inp"
                    value="{{ p.cor_botao }}" maxlength="7" placeholder="#000000"
@@ -633,7 +633,7 @@
             <div class="color-swatch" id="prev_botao_light" style="background:{{ p.cor_botao_light }}"
                  onclick="document.getElementById('_pick_cor_botao_light').click()" title="Abrir seletor visual"></div>
             <input type="color" id="_pick_cor_botao_light" value="{{ p.cor_botao_light }}" tabindex="-1"
-                   style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"
+                   style="position:absolute;width:0;height:0;opacity:0;overflow:hidden;border:0;padding:0"
                    oninput="syncFromPicker(this,'cor_botao_light','prev_botao_light')">
             <input type="text" name="cor_botao_light" id="cor_botao_light" class="form-inp hex-inp"
                    value="{{ p.cor_botao_light }}" maxlength="7" placeholder="#000000"
@@ -650,7 +650,7 @@
             <div class="color-swatch" id="prev_fundo" style="background:{{ p.cor_fundo }}"
                  onclick="document.getElementById('_pick_cor_fundo').click()" title="Abrir seletor visual"></div>
             <input type="color" id="_pick_cor_fundo" value="{{ p.cor_fundo }}" tabindex="-1"
-                   style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"
+                   style="position:absolute;width:0;height:0;opacity:0;overflow:hidden;border:0;padding:0"
                    oninput="syncFromPicker(this,'cor_fundo','prev_fundo')">
             <input type="text" name="cor_fundo" id="cor_fundo" class="form-inp hex-inp"
                    value="{{ p.cor_fundo }}" maxlength="7" placeholder="#000000"
@@ -667,7 +667,7 @@
             <div class="color-swatch" id="prev_sidebar" style="background:{{ p.cor_sidebar }}"
                  onclick="document.getElementById('_pick_cor_sidebar').click()" title="Abrir seletor visual"></div>
             <input type="color" id="_pick_cor_sidebar" value="{{ p.cor_sidebar }}" tabindex="-1"
-                   style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"
+                   style="position:absolute;width:0;height:0;opacity:0;overflow:hidden;border:0;padding:0"
                    oninput="syncFromPicker(this,'cor_sidebar','prev_sidebar')">
             <input type="text" name="cor_sidebar" id="cor_sidebar" class="form-inp hex-inp"
                    value="{{ p.cor_sidebar }}" maxlength="7" placeholder="#000000"
@@ -684,7 +684,7 @@
             <div class="color-swatch" id="prev_sidebar_ativo" style="background:{{ p.cor_sidebar_ativo }}"
                  onclick="document.getElementById('_pick_cor_sidebar_ativo').click()" title="Abrir seletor visual"></div>
             <input type="color" id="_pick_cor_sidebar_ativo" value="{{ p.cor_sidebar_ativo }}" tabindex="-1"
-                   style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"
+                   style="position:absolute;width:0;height:0;opacity:0;overflow:hidden;border:0;padding:0"
                    oninput="syncFromPicker(this,'cor_sidebar_ativo','prev_sidebar_ativo')">
             <input type="text" name="cor_sidebar_ativo" id="cor_sidebar_ativo" class="form-inp hex-inp"
                    value="{{ p.cor_sidebar_ativo }}" maxlength="7" placeholder="#000000"
@@ -701,7 +701,7 @@
             <div class="color-swatch" id="prev_texto" style="background:{{ p.cor_texto }}"
                  onclick="document.getElementById('_pick_cor_texto').click()" title="Abrir seletor visual"></div>
             <input type="color" id="_pick_cor_texto" value="{{ p.cor_texto }}" tabindex="-1"
-                   style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"
+                   style="position:absolute;width:0;height:0;opacity:0;overflow:hidden;border:0;padding:0"
                    oninput="syncFromPicker(this,'cor_texto','prev_texto')">
             <input type="text" name="cor_texto" id="cor_texto" class="form-inp hex-inp"
                    value="{{ p.cor_texto }}" maxlength="7" placeholder="#000000"
@@ -718,7 +718,7 @@
             <div class="color-swatch" id="prev_sidebar_texto" style="background:{{ p.get('cor_sidebar_texto','#94a3b8') }}"
                  onclick="document.getElementById('_pick_cor_sidebar_texto').click()" title="Abrir seletor visual"></div>
             <input type="color" id="_pick_cor_sidebar_texto" value="{{ p.get('cor_sidebar_texto','#94a3b8') }}" tabindex="-1"
-                   style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"
+                   style="position:absolute;width:0;height:0;opacity:0;overflow:hidden;border:0;padding:0"
                    oninput="syncFromPicker(this,'cor_sidebar_texto','prev_sidebar_texto')">
             <input type="text" name="cor_sidebar_texto" id="cor_sidebar_texto" class="form-inp hex-inp"
                    value="{{ p.get('cor_sidebar_texto','#94a3b8') }}" maxlength="7" placeholder="#000000"
