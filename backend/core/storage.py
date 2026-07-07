@@ -1,6 +1,17 @@
+import threading
+import time
+
 from db.repositories import config_repository, tickets_repository, users_repository
 
 from .config import ALLOWED_EXTENSIONS
+
+# Cache em memória da config — evita abrir conexão Oracle em cada requisição.
+# TTL de 60s: mudanças pelo admin aparecem em até 1 minuto sem cache.
+# save_config() invalida imediatamente.
+_cfg_cache: dict | None = None
+_cfg_cache_at: float = 0.0
+_cfg_cache_ttl: float = 60.0
+_cfg_lock = threading.Lock()
 
 # ─────────────────────────────────────────
 #  USUÁRIOS / TICKETS (Oracle Autonomous Database)
@@ -83,11 +94,23 @@ def get_default_config():
 
 
 def load_config():
-    return config_repository.get_config()
+    global _cfg_cache, _cfg_cache_at
+    if _cfg_cache is not None and (time.monotonic() - _cfg_cache_at) < _cfg_cache_ttl:
+        return _cfg_cache
+    with _cfg_lock:
+        if _cfg_cache is not None and (time.monotonic() - _cfg_cache_at) < _cfg_cache_ttl:
+            return _cfg_cache
+        _cfg_cache = config_repository.get_config()
+        _cfg_cache_at = time.monotonic()
+        return _cfg_cache
 
 
 def save_config(cfg):
+    global _cfg_cache, _cfg_cache_at
     config_repository.save_config(cfg)
+    with _cfg_lock:
+        _cfg_cache = None
+        _cfg_cache_at = 0.0
 
 
 def get_sistemas():
