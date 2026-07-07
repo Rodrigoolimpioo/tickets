@@ -15,16 +15,16 @@ config_bp = Blueprint('config', __name__)
 @login_required
 @role_required('admin')
 def configuracoes():
-    users   = storage.load_users()
-    cfg     = storage.load_config()
-    tickets = storage.load_tickets()
-    tab     = request.args.get('tab', 'usuarios')
-    msg     = request.args.get('msg', '')
-    err     = request.args.get('err', '')
-    stats   = {
+    users        = storage.load_users()
+    cfg          = storage.load_config()
+    ticket_stats = storage.get_ticket_stats()
+    tab          = request.args.get('tab', 'usuarios')
+    msg          = request.args.get('msg', '')
+    err          = request.args.get('err', '')
+    stats        = {
         'total_usuarios': len(users),
-        'total_tickets':  len(tickets),
-        'abertos':        sum(1 for t in tickets if t['status'] == 'Aberto'),
+        'total_tickets':  ticket_stats['total'],
+        'abertos':        ticket_stats['abertos'],
     }
     current_ip  = get_client_ip()
     perfis      = cfg.get('perfis', [])

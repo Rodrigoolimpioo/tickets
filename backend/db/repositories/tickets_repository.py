@@ -57,6 +57,20 @@ def list_tickets() -> list:
     return [_ticket_to_dict(t, historico_por_ticket.get(t['id'], [])) for t in tickets]
 
 
+def get_ticket_stats() -> dict:
+    with get_cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*)                                          AS total,
+                SUM(CASE WHEN STATUS = 'Aberto' THEN 1 ELSE 0 END) AS abertos
+            FROM TICKETS
+            """
+        )
+        row = cursor.fetchone()
+    return {'total': row[0], 'abertos': row[1] or 0}
+
+
 def get_next_ticket_number() -> str:
     with get_cursor() as cursor:
         cursor.execute("SELECT NVL(MAX(TO_NUMBER(SUBSTR(NUMERO, 5))), 0) + 1 FROM TICKETS")
