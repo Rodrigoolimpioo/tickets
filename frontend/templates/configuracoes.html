@@ -97,6 +97,8 @@
 <div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Formato inválido. Use PNG, JPG, GIF ou WEBP.</div>
 {% elif err == 'nome_obrigatorio' %}
 <div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> O nome do perfil é obrigatório.</div>
+{% elif err == 'senha_curta' %}
+<div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> A senha deve ter pelo menos 8 caracteres.</div>
 {% endif %}
 
 <!-- ════════════════════════════════════ -->
