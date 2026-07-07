@@ -10,8 +10,8 @@ from flask import g, jsonify, render_template, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .config import (
-    HEX_COLOR_RE, JWT_ALGORITHM, JWT_EXP_HOURS, JWT_SECRET_KEY, PERMISSOES_IDS,
-    TIME_RE, _LOGIN_LOCKOUT_MIN, _LOGIN_MAX,
+    HEX_COLOR_RE, JWT_ALGORITHM, JWT_EXP_HOURS, JWT_SECRET_KEY, LOGIN_RATE_LIMIT_ENABLED,
+    PERMISSOES_IDS, TIME_RE, _LOGIN_LOCKOUT_MIN, _LOGIN_MAX,
 )
 from .time_utils import get_brasilia_time
 from . import storage
@@ -62,6 +62,8 @@ def hash_password(password: str) -> str:
 # ─────────────────────────────────────────
 
 def rate_limit_exceeded(ip: str) -> bool:
+    if not LOGIN_RATE_LIMIT_ENABLED:
+        return False
     now = datetime.utcnow()
     cutoff = now - timedelta(minutes=_LOGIN_LOCKOUT_MIN)
     _login_attempts[ip] = [t for t in _login_attempts[ip] if t > cutoff]

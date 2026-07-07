@@ -76,3 +76,8 @@ DIAS_SEMANA = [
 
 _LOGIN_MAX = 5
 _LOGIN_LOCKOUT_MIN = 15
+
+# Kill switch temporário via env — desliga o rate limit de tentativas de
+# login sem precisar mexer em código/redeploy. Reative colocando
+# LOGIN_RATE_LIMIT_ENABLED=true (ou removendo a variável) no .env.
+LOGIN_RATE_LIMIT_ENABLED = os.environ.get('LOGIN_RATE_LIMIT_ENABLED', 'true').strip().lower() != 'false'
