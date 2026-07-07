@@ -1,7 +1,8 @@
-"""Conexão com o Oracle Autonomous Database via python-oracledb, sempre
-em modo thin (não chama oracledb.init_oracle_client — isso ligaria o modo
-thick, que exige o Oracle Instant Client instalado no SO e não é necessário
-aqui: o modo thin conversa direto com o wallet)."""
+"""Conexão com o Oracle Autonomous Database via python-oracledb em modo thin.
+
+Usa connection pool para reutilizar conexões entre requisições — elimina o
+overhead de TLS handshake (~300ms) a cada query.
+"""
 import contextlib
 import logging
 
@@ -17,25 +18,40 @@ _AUTONOMOUS_PAUSED_HINT = (
     '(os dados não são perdidos) — reative-o no OCI Console e tente de novo.'
 )
 
+_pool: oracledb.ConnectionPool | None = None
+
+
+def get_pool() -> oracledb.ConnectionPool:
+    global _pool
+    if _pool is None:
+        _pool = oracledb.create_pool(
+            user=DB_USER,
+            password=DB_PASSWORD,
+            dsn=DB_DSN,
+            config_dir=DB_WALLET_DIR,
+            wallet_location=DB_WALLET_DIR,
+            wallet_password=DB_WALLET_PASSWORD,
+            min=2,
+            max=8,
+            increment=1,
+        )
+        logger.info('Oracle connection pool criado (min=2, max=8).')
+    return _pool
+
 
 @contextlib.contextmanager
 def get_connection():
-    """Abre uma conexão e garante o fechamento mesmo em caso de erro."""
-    connection = oracledb.connect(
-        user=DB_USER,
-        password=DB_PASSWORD,
-        dsn=DB_DSN,
-        config_dir=DB_WALLET_DIR,
-        wallet_location=DB_WALLET_DIR,
-        wallet_password=DB_WALLET_PASSWORD,
-    )
+    """Retira uma conexão do pool e devolve ao final."""
+    pool = get_pool()
     try:
-        yield connection
+        connection = pool.acquire()
     except oracledb.DatabaseError:
         logger.warning(_AUTONOMOUS_PAUSED_HINT)
         raise
+    try:
+        yield connection
     finally:
-        connection.close()
+        pool.release(connection)
 
 
 @contextlib.contextmanager
@@ -52,7 +68,6 @@ def get_cursor(commit: bool = False):
 
 
 def rows_to_dicts(cursor) -> list:
-    """Converte o resultado de um SELECT em uma lista de dicts com as
-    colunas em minúsculo, independente de como o nome foi declarado no SQL."""
+    """Converte o resultado de um SELECT em lista de dicts com colunas em minúsculo."""
     columns = [col[0].lower() for col in cursor.description]
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
