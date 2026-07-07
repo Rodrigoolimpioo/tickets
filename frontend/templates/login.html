@@ -110,7 +110,7 @@
     <div class="brand">
       <div class="brand-icon">
         {% if g_logo %}
-        <img src="{{ url_for('serve_logo') }}" alt="{{ g_nome_sistema }}" />
+        <img src="{{ url_for('misc.serve_logo') }}" alt="{{ g_nome_sistema }}" />
         {% else %}
         <i class="fa-solid fa-ticket-simple"></i>
         {% endif %}
@@ -125,7 +125,7 @@
     </div>
     {% endif %}
 
-    <form method="POST" action="{{ url_for('login') }}">
+    <form method="POST" action="{{ url_for('auth.login') }}">
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
       <div class="mb-4">
         <label class="form-label">Usuário</label>

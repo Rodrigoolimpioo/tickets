@@ -20,6 +20,9 @@ backend/data/config.json
 # Manter estrutura da pasta data
 !backend/data/.gitkeep
 
+# Wallet do Oracle Autonomous Database — nunca commitar
+backend/wallet/
+
 # Sistema
 .DS_Store
 Thumbs.db

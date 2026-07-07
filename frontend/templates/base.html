@@ -31,7 +31,7 @@
     <div class="sidebar-header">
       <div class="brand">
         {% if g_logo %}
-        <img src="{{ url_for('serve_logo') }}" alt="{{ g_nome_sistema }}" class="brand-logo" />
+        <img src="{{ url_for('misc.serve_logo') }}" alt="{{ g_nome_sistema }}" class="brand-logo" />
         {% else %}
         <i class="fa-solid fa-ticket-simple"></i>
         {% endif %}
@@ -49,21 +49,21 @@
     <ul class="sidebar-menu">
       {% if session.role == 'admin' or 'dashboard' in g_permissoes %}
       <li>
-        <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">
+        <a href="{{ url_for('dashboard.dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">
           <i class="fa-solid fa-chart-pie"></i> Dashboard
         </a>
       </li>
       {% endif %}
       {% if session.role == 'admin' or 'abrir_ticket' in g_permissoes %}
       <li>
-        <a href="{{ url_for('abrir_ticket') }}" class="{{ 'active' if request.endpoint == 'abrir_ticket' else '' }}">
+        <a href="{{ url_for('tickets.abrir_ticket') }}" class="{{ 'active' if request.endpoint == 'abrir_ticket' else '' }}">
           <i class="fa-solid fa-circle-plus"></i> Abrir Ticket
         </a>
       </li>
       {% endif %}
       {% if session.role == 'admin' or 'acompanhamento' in g_permissoes %}
       <li>
-        <a href="{{ url_for('acompanhamento') }}" class="{{ 'active' if request.endpoint in ['acompanhamento', 'ver_ticket'] else '' }}">
+        <a href="{{ url_for('tickets.acompanhamento') }}" class="{{ 'active' if request.endpoint in ['acompanhamento', 'ver_ticket'] else '' }}">
           <i class="fa-solid fa-list-check"></i>
           {% if session.role == 'funcionario' %}Meus Tickets{% else %}Acompanhamento{% endif %}
         </a>
@@ -72,7 +72,7 @@
       {% if session.role == 'admin' %}
       <li class="menu-section">Administração</li>
       <li>
-        <a href="{{ url_for('configuracoes', tab='usuarios') }}" class="{{ 'active' if request.endpoint == 'configuracoes' else '' }}">
+        <a href="{{ url_for('config.configuracoes', tab='usuarios') }}" class="{{ 'active' if request.endpoint == 'configuracoes' else '' }}">
           <i class="fa-solid fa-gear"></i> Configurações
         </a>
       </li>
@@ -80,10 +80,10 @@
     </ul>
 
     <div class="sidebar-footer">
-      <a href="{{ url_for('meu_perfil') }}" class="footer-link {{ 'active' if request.endpoint == 'meu_perfil' else '' }}">
+      <a href="{{ url_for('misc.meu_perfil') }}" class="footer-link {{ 'active' if request.endpoint == 'meu_perfil' else '' }}">
         <i class="fa-solid fa-user-gear"></i> Meu Perfil
       </a>
-      <a href="{{ url_for('logout') }}" class="footer-link logout">
+      <a href="{{ url_for('auth.logout') }}" class="footer-link logout">
         <i class="fa-solid fa-right-from-bracket"></i> Sair
       </a>
     </div>

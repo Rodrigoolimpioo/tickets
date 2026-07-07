@@ -14,7 +14,7 @@
     </div>
     <p class="page-subtitle mt-1">{{ ticket.nome }}</p>
   </div>
-  <a href="{{ url_for('acompanhamento') }}" class="btn-back">
+  <a href="{{ url_for('tickets.acompanhamento') }}" class="btn-back">
     <i class="fa-solid fa-arrow-left"></i> Voltar
   </a>
 </div>
@@ -63,12 +63,12 @@
         <div class="anexo-box">
           {% if ticket.arquivo.tipo == 'video' %}
           <video controls class="anexo-media">
-            <source src="{{ url_for('uploaded_file', filename=ticket.arquivo.filename) }}" />
+            <source src="{{ url_for('misc.uploaded_file', filename=ticket.arquivo.filename) }}" />
             Seu navegador não suporta vídeo.
           </video>
           {% else %}
-          <a href="{{ url_for('uploaded_file', filename=ticket.arquivo.filename) }}" target="_blank">
-            <img src="{{ url_for('uploaded_file', filename=ticket.arquivo.filename) }}"
+          <a href="{{ url_for('misc.uploaded_file', filename=ticket.arquivo.filename) }}" target="_blank">
+            <img src="{{ url_for('misc.uploaded_file', filename=ticket.arquivo.filename) }}"
                  class="anexo-media" alt="Anexo do ticket" />
           </a>
           {% endif %}
@@ -108,7 +108,7 @@
       <div class="card-panel-header">
         <h5><i class="fa-solid fa-comment"></i> Adicionar Comentário</h5>
       </div>
-      <form method="POST" action="{{ url_for('comentar_ticket', ticket_id=ticket.id) }}">
+      <form method="POST" action="{{ url_for('tickets.comentar_ticket', ticket_id=ticket.id) }}">
         <textarea name="comentario" class="form-inp form-textarea" rows="3"
                   placeholder="Escreva um comentário ou atualização..."></textarea>
         <div class="mt-2 text-end">
@@ -129,7 +129,7 @@
       <div class="card-panel-header">
         <h5><i class="fa-solid fa-pen-to-square"></i> Atualizar Status</h5>
       </div>
-      <form method="POST" action="{{ url_for('atualizar_ticket', ticket_id=ticket.id) }}">
+      <form method="POST" action="{{ url_for('tickets.atualizar_ticket', ticket_id=ticket.id) }}">
         <div class="form-group">
           <label class="form-lbl-sm">Novo Status</label>
           <select name="status" class="form-inp-sm form-sel-sm w-100" required>

@@ -12,7 +12,7 @@
 
 <!-- FILTROS -->
 <div class="card-panel mb-3">
-  <form method="GET" action="{{ url_for('acompanhamento') }}" class="filtros-form">
+  <form method="GET" action="{{ url_for('tickets.acompanhamento') }}" class="filtros-form">
     <div class="filtros-row">
       <div class="filtro-item flex-grow-1">
         <label class="form-lbl-sm"><i class="fa-solid fa-magnifying-glass"></i> Buscar</label>
@@ -42,7 +42,7 @@
           <i class="fa-solid fa-filter"></i> Filtrar
         </button>
         {% if busca or filtro_status or filtro_sistema %}
-        <a href="{{ url_for('acompanhamento') }}" class="btn-limpar">
+        <a href="{{ url_for('tickets.acompanhamento') }}" class="btn-limpar">
           <i class="fa-solid fa-xmark"></i>
         </a>
         {% endif %}
@@ -71,7 +71,7 @@
       </thead>
       <tbody>
         {% for t in tickets %}
-        <tr onclick="window.location='{{ url_for('ver_ticket', ticket_id=t.id) }}'" style="cursor:pointer">
+        <tr onclick="window.location='{{ url_for('tickets.ver_ticket', ticket_id=t.id) }}'" style="cursor:pointer">
           <td><span class="ticket-num">{{ t.numero }}</span></td>
           <td>
             <div class="ticket-nome">{{ t.nome }}</div>
@@ -92,7 +92,7 @@
           {% endif %}
           <td class="text-muted small">{{ t.data_formatada }}</td>
           <td onclick="event.stopPropagation()" style="white-space:nowrap">
-            <a href="{{ url_for('ver_ticket', ticket_id=t.id) }}" class="btn-acao">
+            <a href="{{ url_for('tickets.ver_ticket', ticket_id=t.id) }}" class="btn-acao">
               <i class="fa-solid fa-eye"></i>
             </a>
             {% if session.role == 'admin' %}
@@ -115,7 +115,7 @@
     <i class="fa-solid fa-inbox"></i>
     <p>Nenhum ticket encontrado</p>
     {% if session.role in ['admin', 'funcionario'] %}
-    <a href="{{ url_for('abrir_ticket') }}" class="btn-primary-sm">
+    <a href="{{ url_for('tickets.abrir_ticket') }}" class="btn-primary-sm">
       <i class="fa-solid fa-plus"></i> Abrir novo ticket
     </a>
     {% endif %}
