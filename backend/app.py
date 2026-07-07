@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, request, session
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from core import storage
 from core.config import (
@@ -32,6 +33,13 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False   # Mudar para True em produção com HTTPS
 app.config['PERMANENT_SESSION_LIFETIME'] = SESSION_LIFETIME
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
+
+# Atrás de um proxy reverso (Nginx), request.remote_addr sempre seria o IP
+# do próprio Nginx. ProxyFix reescreve remote_addr a partir do cabeçalho
+# X-Forwarded-For, mas confiando em exatamente 1 hop — só o Nginx local
+# pode setar esse cabeçalho de forma efetiva, então isso não abre brecha
+# para um cliente externo forjar o próprio IP e burlar rate limit/allowlist.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
