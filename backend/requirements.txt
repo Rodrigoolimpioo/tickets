@@ -3,3 +3,4 @@ pytz==2024.1
 Werkzeug==3.0.3
 PyJWT==2.9.0
 oracledb==2.4.1
+gunicorn==26.0.0
