@@ -354,8 +354,8 @@ body {
 .stat-andamento .stat-number { color: var(--amber); }
 .stat-resolvido .stat-icon { color: var(--green); }
 .stat-resolvido .stat-number { color: var(--green); }
-.stat-fechado .stat-icon { color: var(--gray); }
-.stat-fechado .stat-number { color: var(--gray); }
+.stat-incubado .stat-icon { color: var(--gray); }
+.stat-incubado .stat-number { color: var(--gray); }
 .stat-novo .stat-icon { color: #333333; }
 .stat-novo .stat-number { color: #333333; }
 
@@ -598,6 +598,7 @@ body {
 .badge-em-andamento { background: #fef3c7; color: #b45309; }
 .badge-resolvido    { background: #dcfce7; color: #15803d; }
 .badge-fechado      { background: #f1f5f9; color: #475569; }
+.badge-incubado     { background: #f1f5f9; color: #475569; }
 
 /* ===== BADGE SISTEMA ===== */
 .badge-sistema {
@@ -695,7 +696,7 @@ body {
 .fill-aberto    { background: #333333; }
 .fill-andamento { background: #f59e0b; }
 .fill-resolvido { background: #22c55e; }
-.fill-fechado   { background: #94a3b8; }
+.fill-incubado  { background: #94a3b8; }
 
 /* ===== FORM ELEMENTS ===== */
 .form-group { margin-bottom: 18px; }

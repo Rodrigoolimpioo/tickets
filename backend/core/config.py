@@ -45,7 +45,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'mp4', 'avi', 
 LOGO_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 MAX_CONTENT_LENGTH = 100 * 1024 * 1024
 
-STATUS_LIST = ['Aberto', 'Em Andamento', 'Resolvido', 'Fechado']
+STATUS_LIST = ['Aberto', 'Em Andamento', 'Resolvido', 'Incubado']
 ROLES_VALIDOS = {'admin', 'supervisor', 'funcionario'}
 HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
 TIME_RE = re.compile(r'^(?:[01]\d|2[0-3]):[0-5]\d$')

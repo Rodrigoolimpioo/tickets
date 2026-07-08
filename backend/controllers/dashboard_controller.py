@@ -19,7 +19,7 @@ def dashboard():
         'aberto':       sum(1 for t in tickets if t['status'] == 'Aberto'),
         'em_andamento': sum(1 for t in tickets if t['status'] == 'Em Andamento'),
         'resolvido':    sum(1 for t in tickets if t['status'] == 'Resolvido'),
-        'fechado':      sum(1 for t in tickets if t['status'] == 'Fechado'),
+        'fechado':      sum(1 for t in tickets if t['status'] == 'Incubado'),
     }
     sistemas_stats = {s: sum(1 for t in tickets if t.get('sistema') == s) for s in storage.get_sistemas()}
     recentes = sorted(tickets, key=lambda x: x.get('data_criacao', ''), reverse=True)[:5]

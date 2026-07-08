@@ -40,10 +40,10 @@
     </a>
   </div>
   <div class="col-6 col-md-4 col-xl-2">
-    <a href="{{ url_for('tickets.acompanhamento', status='Fechado') }}" class="stat-card stat-fechado">
+    <a href="{{ url_for('tickets.acompanhamento', status='Incubado') }}" class="stat-card stat-incubado">
       <div class="stat-icon"><i class="fa-solid fa-lock"></i></div>
       <div class="stat-number">{{ stats.fechado }}</div>
-      <div class="stat-label">Fechados</div>
+      <div class="stat-label">Incubados</div>
     </a>
   </div>
   {% if session.role == 'admin' or 'abrir_ticket' in g_permissoes %}
@@ -163,11 +163,11 @@
         </div>
         <div class="dist-item">
           <div class="dist-label">
-            <span>Fechados</span>
+            <span>Incubados</span>
             <span>{{ stats.fechado }}</span>
           </div>
           <div class="dist-bar">
-            <div class="dist-fill fill-fechado" style="width: {{ (stats.fechado / total * 100) | int }}%"></div>
+            <div class="dist-fill fill-incubado" style="width: {{ (stats.fechado / total * 100) | int }}%"></div>
           </div>
         </div>
       </div>
