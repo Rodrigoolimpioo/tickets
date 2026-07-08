@@ -80,9 +80,11 @@
     </ul>
 
     <div class="sidebar-footer">
+      {% if session.role == 'admin' or 'meu_perfil' in g_permissoes %}
       <a href="{{ url_for('misc.meu_perfil') }}" class="footer-link {{ 'active' if request.endpoint == 'meu_perfil' else '' }}">
         <i class="fa-solid fa-user-gear"></i> Meu Perfil
       </a>
+      {% endif %}
       <a href="{{ url_for('auth.logout') }}" class="footer-link logout">
         <i class="fa-solid fa-right-from-bracket"></i> Sair
       </a>
