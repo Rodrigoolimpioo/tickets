@@ -159,12 +159,27 @@ def comentar_ticket(ticket_id):
     if session['role'] == 'funcionario' and ticket.get('criado_por_id') != session['user_id']:
         return redirect(url_for('tickets.acompanhamento'))
     comentario = request.form.get('comentario', '').strip()
-    if comentario:
+
+    arquivo_info = None
+    if 'arquivo' in request.files:
+        file = request.files['arquivo']
+        if file and file.filename:
+            ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+            imagem_exts = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
+            if ext in imagem_exts:
+                fname = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
+                file.save(os.path.join(UPLOADS_DIR, fname))
+                arquivo_info = {'filename': fname, 'original_name': file.filename}
+
+    if comentario or arquivo_info:
         now = get_brasilia_time()
-        ticket['historico'].append({'acao': f'Comentário: {comentario}',
-                                    'por': session['name'],
-                                    'data': now.strftime('%d/%m/%Y %H:%M:%S')})
+        entrada = {'acao': f'Comentário: {comentario}' if comentario else 'Foto anexada',
+                   'por': session['name'],
+                   'data': now.strftime('%d/%m/%Y %H:%M:%S')}
+        if arquivo_info:
+            entrada['arquivo'] = arquivo_info
+        ticket['historico'].append(entrada)
         storage.save_tickets(tickets)
-        log_evento('ticket_comentado', detalhes=f"{ticket['numero']} — {comentario[:200]}",
+        log_evento('ticket_comentado', detalhes=f"{ticket['numero']} — {(comentario or 'foto')[:200]}",
                    entidade_tipo='ticket', entidade_id=ticket_id)
     return redirect(url_for('tickets.ver_ticket', ticket_id=ticket_id))

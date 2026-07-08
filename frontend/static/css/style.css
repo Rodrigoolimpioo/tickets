@@ -698,6 +698,38 @@ body {
 .fill-resolvido { background: #22c55e; }
 .fill-incubado  { background: #94a3b8; }
 
+/* ===== COMENTÁRIO COM FOTO ===== */
+.btn-anexar-comentario {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-anexar-comentario:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: rgba(0,0,0,0.02);
+}
+.timeline-img {
+  display: block;
+  max-width: 100%;
+  max-height: 260px;
+  border-radius: 8px;
+  margin: 8px 0 6px;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  transition: opacity 0.2s;
+}
+.timeline-img:hover { opacity: 0.85; }
+
 /* ===== FORM ELEMENTS ===== */
 .form-group { margin-bottom: 18px; }
 

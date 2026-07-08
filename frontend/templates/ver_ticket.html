@@ -92,6 +92,12 @@
           <div class="timeline-dot"></div>
           <div class="timeline-content">
             <div class="timeline-acao">{{ h.acao }}</div>
+            {% if h.get('arquivo') %}
+            <a href="{{ url_for('misc.uploaded_file', filename=h.arquivo.filename) }}" target="_blank">
+              <img src="{{ url_for('misc.uploaded_file', filename=h.arquivo.filename) }}"
+                   class="timeline-img" alt="{{ h.arquivo.original_name }}" />
+            </a>
+            {% endif %}
             <div class="timeline-meta">
               <i class="fa-solid fa-user"></i> {{ h.por }}
               &nbsp;·&nbsp;
@@ -109,12 +115,19 @@
       <div class="card-panel-header">
         <h5><i class="fa-solid fa-comment"></i> Adicionar Comentário</h5>
       </div>
-      <form method="POST" action="{{ url_for('tickets.comentar_ticket', ticket_id=ticket.id) }}">
+      <form method="POST" action="{{ url_for('tickets.comentar_ticket', ticket_id=ticket.id) }}"
+            enctype="multipart/form-data">
         <textarea name="comentario" class="form-inp form-textarea" rows="3"
                   placeholder="Escreva um comentário ou atualização..."></textarea>
-        <div class="mt-2 text-end">
+        <div class="mt-2" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:space-between;">
+          <label class="btn-anexar-comentario">
+            <i class="fa-solid fa-image"></i> Anexar foto
+            <input type="file" name="arquivo" accept="image/*" style="display:none"
+                   onchange="mostrarNomeArquivo(this)" />
+          </label>
+          <span id="nomeArquivoComentario" style="font-size:12px; color:#64748b; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
           <button type="submit" class="btn-submit">
-            <i class="fa-solid fa-paper-plane"></i> Enviar Comentário
+            <i class="fa-solid fa-paper-plane"></i> Enviar
           </button>
         </div>
       </form>
@@ -186,4 +199,13 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function mostrarNomeArquivo(input) {
+  const span = document.getElementById('nomeArquivoComentario');
+  span.textContent = input.files.length ? input.files[0].name : '';
+}
+</script>
 {% endblock %}
