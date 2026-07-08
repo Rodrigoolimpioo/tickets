@@ -46,7 +46,7 @@
       <div class="stat-label">Fechados</div>
     </a>
   </div>
-  {% if session.role in ['admin', 'funcionario'] %}
+  {% if session.role == 'admin' or 'abrir_ticket' in g_permissoes %}
   <div class="col-6 col-md-4 col-xl-2">
     <a href="{{ url_for('tickets.abrir_ticket') }}" class="stat-card stat-novo">
       <div class="stat-icon"><i class="fa-solid fa-circle-plus"></i></div>
@@ -100,7 +100,7 @@
       <div class="empty-state">
         <i class="fa-solid fa-inbox"></i>
         <p>Nenhum ticket encontrado</p>
-        {% if session.role in ['admin', 'funcionario'] %}
+        {% if session.role == 'admin' or 'abrir_ticket' in g_permissoes %}
         <a href="{{ url_for('tickets.abrir_ticket') }}" class="btn-primary-sm">Abrir primeiro ticket</a>
         {% endif %}
       </div>
@@ -127,7 +127,7 @@
       </div>
     </div>
 
-    {% if session.role in ['admin', 'supervisor'] %}
+    {% if session.role == 'admin' or 'acompanhamento' in g_permissoes %}
     <div class="card-panel mt-3">
       <div class="card-panel-header">
         <h5><i class="fa-solid fa-chart-bar"></i> Distribuição</h5>

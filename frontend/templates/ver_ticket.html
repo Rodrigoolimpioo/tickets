@@ -104,6 +104,7 @@
     </div>
 
     <!-- COMENTÁRIO -->
+    {% if session.role == 'admin' or 'comentar_ticket' in g_permissoes %}
     <div class="card-panel">
       <div class="card-panel-header">
         <h5><i class="fa-solid fa-comment"></i> Adicionar Comentário</h5>
@@ -118,13 +119,14 @@
         </div>
       </form>
     </div>
+    {% endif %}
   </div>
 
   <!-- COLUNA LATERAL -->
   <div class="col-lg-4">
 
-    <!-- ATUALIZAR STATUS (apenas admin e supervisor) -->
-    {% if session.role in ['admin', 'supervisor'] %}
+    <!-- ATUALIZAR STATUS -->
+    {% if session.role == 'admin' or 'atualizar_ticket' in g_permissoes %}
     <div class="card-panel mb-3">
       <div class="card-panel-header">
         <h5><i class="fa-solid fa-pen-to-square"></i> Atualizar Status</h5>
