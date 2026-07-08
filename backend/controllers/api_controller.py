@@ -9,6 +9,7 @@ de cookies de sessão.
 from flask import Blueprint, g, jsonify, request
 
 from core import storage
+from core.audit import log_evento
 from core.config import PERMISSOES, ROLES_VALIDOS, STATUS_LIST
 from core.security import (
     api_permission_required, api_role_required, generate_token,
@@ -41,9 +42,11 @@ def auth_token():
                  if u['username'] == username and u.get('ativo', True)), None)
 
     if not user or not verify_password(user['password'], password):
-        register_failed_login(client_ip)
+        register_failed_login(client_ip, username=username or None)
         return jsonify({'error': 'credenciais_invalidas'}), 401
 
+    log_evento('login_sucesso', detalhes='via API (token)',
+               usuario_id=user['id'], usuario_nome=user['name'])
     token_data = generate_token(user)
     return jsonify({
         'access_token': token_data['access_token'],

@@ -60,6 +60,10 @@
      class="cfg-tab {{ 'cfg-tab-active' if tab == 'perfis' else '' }}">
     <i class="fa-solid fa-id-badge"></i> Perfis de Acesso
   </a>
+  <a href="{{ url_for('config.configuracoes', tab='logs') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'logs' else '' }}">
+    <i class="fa-solid fa-clock-rotate-left"></i> Logs
+  </a>
 </div>
 
 <!-- MENSAGENS -->
@@ -826,6 +830,82 @@ function resetarPadrao() {
   }
 }
 </script>
+
+<!-- ════════════════════════════════════ -->
+<!-- LOGS DE AUDITORIA                     -->
+<!-- ════════════════════════════════════ -->
+{% elif tab == 'logs' %}
+<div class="card-panel mb-3">
+  <form method="GET" action="{{ url_for('config.configuracoes') }}" class="filtros-form">
+    <input type="hidden" name="tab" value="logs" />
+    <div class="filtros-row">
+      <div class="filtro-item flex-grow-1">
+        <label class="form-lbl-sm"><i class="fa-solid fa-magnifying-glass"></i> Buscar nos detalhes</label>
+        <input type="text" name="busca" value="{{ busca_logs }}" class="form-inp-sm"
+               placeholder="Nº do ticket, nome, IP..." />
+      </div>
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-user"></i> Usuário</label>
+        <input type="text" name="usuario" value="{{ filtro_usuario }}" class="form-inp-sm"
+               placeholder="Nome do usuário" />
+      </div>
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-list"></i> Ação</label>
+        <select name="acao" class="form-inp-sm form-sel-sm">
+          <option value="">Todas</option>
+          {% for a in acoes_log %}
+          <option value="{{ a }}" {{ 'selected' if filtro_acao == a }}>{{ a }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filtro-item align-self-end">
+        <button type="submit" class="btn-filtrar">
+          <i class="fa-solid fa-filter"></i> Filtrar
+        </button>
+        {% if busca_logs or filtro_usuario or filtro_acao %}
+        <a href="{{ url_for('config.configuracoes', tab='logs') }}" class="btn-limpar">
+          <i class="fa-solid fa-xmark"></i>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="card-panel p-0">
+  {% if logs %}
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:155px">Data/Hora</th>
+          <th style="width:170px">Usuário</th>
+          <th style="width:200px">Ação</th>
+          <th>Detalhes</th>
+          <th style="width:130px">IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-muted small">{{ log.data_formatada }}</td>
+          <td>{{ log.usuario_nome or '—' }}</td>
+          <td><code class="code-tag">{{ log.acao }}</code></td>
+          <td class="small">{{ log.detalhes or '' }}</td>
+          <td class="text-muted small">{{ log.ip or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-muted small p-3 mb-0">Mostrando os 200 eventos mais recentes que casam com o filtro.</p>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-clock-rotate-left"></i>
+    <p>Nenhum evento encontrado</p>
+  </div>
+  {% endif %}
+</div>
 {% endif %}
 
 <!-- MODAL EXCLUIR USUÁRIO -->

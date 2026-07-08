@@ -5,6 +5,7 @@ from flask import Blueprint, redirect, render_template, request, session, url_fo
 from werkzeug.utils import secure_filename
 
 from core import storage
+from core.audit import log_evento
 from core.config import STATUS_LIST, UPLOADS_DIR
 from core.security import login_required, permission_required, role_required
 from core.time_utils import get_brasilia_time
@@ -60,6 +61,8 @@ def abrir_ticket():
                 tickets = storage.load_tickets()
                 tickets.append(ticket)
                 storage.save_tickets(tickets)
+                log_evento('ticket_criado', detalhes=f"{ticket['numero']} — {nome}",
+                           entidade_tipo='ticket', entidade_id=ticket['id'])
                 return redirect(url_for('tickets.ver_ticket', ticket_id=ticket['id']))
 
     return render_template('abrir_ticket.html', sistemas=storage.get_sistemas(), error=error)
@@ -122,6 +125,8 @@ def atualizar_ticket(ticket_id):
         ticket['historico'].append({'acao': entrada, 'por': session['name'],
                                     'data': now.strftime('%d/%m/%Y %H:%M:%S')})
         storage.save_tickets(tickets)
+        log_evento('ticket_atualizado', detalhes=f"{ticket['numero']} — {entrada}",
+                   entidade_tipo='ticket', entidade_id=ticket_id)
     return redirect(url_for('tickets.ver_ticket', ticket_id=ticket_id))
 
 
@@ -138,6 +143,8 @@ def excluir_ticket(ticket_id):
                 os.remove(path)
         tickets = [t for t in tickets if t['id'] != ticket_id]
         storage.save_tickets(tickets)
+        log_evento('ticket_excluido', detalhes=f"{ticket['numero']} — {ticket['nome']}",
+                   entidade_tipo='ticket', entidade_id=ticket_id)
     return redirect(url_for('tickets.acompanhamento'))
 
 
@@ -158,4 +165,6 @@ def comentar_ticket(ticket_id):
                                     'por': session['name'],
                                     'data': now.strftime('%d/%m/%Y %H:%M:%S')})
         storage.save_tickets(tickets)
+        log_evento('ticket_comentado', detalhes=f"{ticket['numero']} — {comentario[:200]}",
+                   entidade_tipo='ticket', entidade_id=ticket_id)
     return redirect(url_for('tickets.ver_ticket', ticket_id=ticket_id))

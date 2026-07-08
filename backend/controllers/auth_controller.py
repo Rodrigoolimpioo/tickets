@@ -1,6 +1,7 @@
 from flask import Blueprint, redirect, render_template, request, session, url_for
 
 from core import storage
+from core.audit import log_evento
 from core.security import (
     csrf_valid, deny_response, get_user_permissoes,
     rate_limit_exceeded, register_failed_login, verify_password, hash_password,
@@ -51,15 +52,18 @@ def login():
                 'permissoes': permissoes,
                 'perfil_id': user.get('perfil_id'),
             })
+            log_evento('login_sucesso')
             return redirect(url_for('dashboard.dashboard'))
 
-        register_failed_login(client_ip)
+        register_failed_login(client_ip, username=username or None)
         error = 'Usuário ou senha inválidos.'
     return render_template('login.html', error=error)
 
 
 @auth_bp.route('/logout')
 def logout():
+    if 'user_id' in session:
+        log_evento('logout')
     session.clear()
     return redirect(url_for('auth.login'))
 

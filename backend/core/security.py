@@ -1,7 +1,6 @@
 import hmac
 import ipaddress
 import secrets
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
@@ -9,14 +8,14 @@ import jwt
 from flask import g, jsonify, render_template, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from db.repositories import logs_repository
+
 from .config import (
     HEX_COLOR_RE, JWT_ALGORITHM, JWT_EXP_HOURS, JWT_SECRET_KEY, LOGIN_RATE_LIMIT_ENABLED,
     PERMISSOES_IDS, TIME_RE, _LOGIN_LOCKOUT_MIN, _LOGIN_MAX,
 )
 from .time_utils import get_brasilia_time
 from . import storage
-
-_login_attempts: dict = defaultdict(list)
 
 
 # ─────────────────────────────────────────
@@ -60,18 +59,22 @@ def hash_password(password: str) -> str:
 # ─────────────────────────────────────────
 #  RATE LIMIT DE LOGIN
 # ─────────────────────────────────────────
+#  Contagem via banco (LOGS_AUDITORIA), não em memória — com múltiplos
+#  workers Gunicorn, cada processo teria seu próprio contador isolado,
+#  deixando o limite furável (bastava a requisição cair em outro worker).
 
 def rate_limit_exceeded(ip: str) -> bool:
     if not LOGIN_RATE_LIMIT_ENABLED:
         return False
-    now = datetime.utcnow()
-    cutoff = now - timedelta(minutes=_LOGIN_LOCKOUT_MIN)
-    _login_attempts[ip] = [t for t in _login_attempts[ip] if t > cutoff]
-    return len(_login_attempts[ip]) >= _LOGIN_MAX
+    cutoff = get_brasilia_time().replace(tzinfo=None) - timedelta(minutes=_LOGIN_LOCKOUT_MIN)
+    return logs_repository.contar_desde('login_falha', ip, cutoff) >= _LOGIN_MAX
 
 
-def register_failed_login(ip: str) -> None:
-    _login_attempts[ip].append(datetime.utcnow())
+def register_failed_login(ip: str, username: str = None) -> None:
+    logs_repository.registrar(
+        acao='login_falha', quando=get_brasilia_time().replace(tzinfo=None), ip=ip,
+        usuario_nome=username, detalhes=f'usuário tentado: {username}' if username else None,
+    )
 
 
 # ─────────────────────────────────────────
