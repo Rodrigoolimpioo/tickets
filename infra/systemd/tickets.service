@@ -1,0 +1,22 @@
+[Unit]
+Description=Tickets — Sistema de Gerenciamento de Chamados (Gunicorn)
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/tickets/backend
+EnvironmentFile=/home/ubuntu/tickets/backend/.env
+ExecStart=/home/ubuntu/tickets/venv/bin/gunicorn \
+    --workers 2 \
+    --threads 4 \
+    --bind 0.0.0.0:5000 \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level debug \
+    app:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
