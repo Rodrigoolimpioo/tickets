@@ -103,6 +103,7 @@ def add_security_headers(response):
 ENDPOINTS_LIVRES = {
     'static', 'misc.uploaded_file', 'misc.serve_logo',
     'auth.login', 'auth.acesso_negado', 'auth.logout', 'api.auth_token',
+    'auth.esqueci_senha', 'auth.resetar_senha',
 }
 
 
