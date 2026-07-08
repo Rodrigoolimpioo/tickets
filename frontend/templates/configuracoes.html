@@ -102,7 +102,7 @@
 {% elif err == 'nome_obrigatorio' %}
 <div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> O nome do perfil é obrigatório.</div>
 {% elif err == 'senha_curta' %}
-<div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> A senha deve ter pelo menos 8 caracteres.</div>
+<div class="alert-msg alert-error mb-3"><i class="fa-solid fa-triangle-exclamation"></i> A senha deve ter pelo menos 6 caracteres.</div>
 {% endif %}
 
 <!-- ════════════════════════════════════ -->
@@ -214,7 +214,7 @@
           <label class="form-lbl">Senha <span class="req">*</span></label>
           <div style="position:relative">
             <input type="password" name="password" id="novaSenha" class="form-inp"
-                   placeholder="Mínimo 4 caracteres" required minlength="4"
+                   placeholder="Mínimo 6 caracteres" required minlength="6"
                    style="padding-right:44px" />
             <button type="button" class="btn-eye" onclick="toggleSenha('novaSenha', this)">
               <i class="fa-solid fa-eye"></i>
@@ -975,7 +975,7 @@ function resetarPadrao() {
             <label class="form-lbl-sm">Nova senha</label>
             <div style="position:relative">
               <input type="password" name="nova_senha" id="senhaModal" class="form-inp-sm"
-                     required minlength="4" placeholder="Mínimo 4 caracteres"
+                     required minlength="6" placeholder="Mínimo 6 caracteres"
                      style="padding-right:40px" />
               <button type="button" class="btn-eye btn-eye-sm" onclick="toggleSenha('senhaModal', this)">
                 <i class="fa-solid fa-eye"></i>

@@ -49,7 +49,7 @@ STATUS_LIST = ['Aberto', 'Em Andamento', 'Resolvido', 'Fechado']
 ROLES_VALIDOS = {'admin', 'supervisor', 'funcionario'}
 HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
 TIME_RE = re.compile(r'^(?:[01]\d|2[0-3]):[0-5]\d$')
-PASSWORD_MIN = 8
+PASSWORD_MIN = 6
 
 # Módulos do sistema que podem ser liberados/bloqueados por perfil de acesso.
 # Parametrizável em tempo real via Configurações → Perfis (web) ou /api/perfis (API).

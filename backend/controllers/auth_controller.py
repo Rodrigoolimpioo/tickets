@@ -143,7 +143,7 @@ def resetar_senha(token):
             return render_template('resetar_senha.html', sucesso=True, token=token)
         error = {
             'senhas_diferentes': 'As senhas não coincidem.',
-            'senha_curta': 'A senha deve ter pelo menos 8 caracteres.',
+            'senha_curta': 'A senha deve ter pelo menos 6 caracteres.',
             'token_invalido': 'Esse link é inválido ou já expirou.',
         }.get(err, 'Não foi possível redefinir a senha.')
 
