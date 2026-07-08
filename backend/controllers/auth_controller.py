@@ -40,6 +40,15 @@ def login():
                      if u['username'] == username and u.get('ativo', True)), None)
 
         if user and verify_password(user['password'], password):
+            if user.get('role') != 'admin':
+                cfg = storage.load_config()
+                ip_cfg = cfg.get('ip_control', {})
+                if ip_cfg.get('enabled', False):
+                    client_ip = get_client_ip()
+                    allowed = ip_cfg.get('ips', [])
+                    if allowed and client_ip not in allowed:
+                        error = f'Acesso não permitido para o IP {client_ip}.'
+                        return render_template('login.html', error=error)
             if not _is_hashed(user['password']):
                 user['password'] = hash_password(password)
                 storage.save_users(users)

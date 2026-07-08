@@ -102,7 +102,7 @@ def add_security_headers(response):
 
 ENDPOINTS_LIVRES = {
     'static', 'misc.uploaded_file', 'misc.serve_logo',
-    'auth.acesso_negado', 'auth.logout', 'api.auth_token',
+    'auth.login', 'auth.acesso_negado', 'auth.logout', 'api.auth_token',
 }
 
 
@@ -125,7 +125,7 @@ def check_access_controls():
     now = get_brasilia_time()
 
     ip_cfg = cfg.get('ip_control', {})
-    if ip_cfg.get('enabled', False):
+    if ip_cfg.get('enabled', False) and session.get('role') != 'admin':
         client_ip = get_client_ip()
         allowed = ip_cfg.get('ips', [])
         if allowed and client_ip not in allowed:
