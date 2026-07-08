@@ -14,15 +14,28 @@ from core.time_utils import get_brasilia_time, get_client_ip
 auth_bp = Blueprint('auth', __name__)
 
 
+def _home_url() -> str:
+    """Retorna a URL inicial correta para o usuário logado com base nas
+    permissões do perfil — evita redirecionar para uma página sem acesso."""
+    if session.get('role') == 'admin':
+        return url_for('dashboard.dashboard')
+    perms = session.get('permissoes', [])
+    if 'dashboard'     in perms: return url_for('dashboard.dashboard')
+    if 'abrir_ticket'  in perms: return url_for('tickets.abrir_ticket')
+    if 'acompanhamento' in perms: return url_for('tickets.acompanhamento')
+    if 'meu_perfil'    in perms: return url_for('misc.meu_perfil')
+    return url_for('auth.acesso_negado')
+
+
 @auth_bp.route('/')
 def index():
-    return redirect(url_for('dashboard.dashboard') if 'user_id' in session else url_for('auth.login'))
+    return redirect(_home_url() if 'user_id' in session else url_for('auth.login'))
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(_home_url())
     error = None
     if request.method == 'POST':
         token = request.form.get('_csrf_token', '')
@@ -63,7 +76,7 @@ def login():
                 'perfil_id': user.get('perfil_id'),
             })
             log_evento('login_sucesso')
-            return redirect(url_for('dashboard.dashboard'))
+            return redirect(_home_url())
 
         register_failed_login(client_ip, username=username or None)
         error = 'Usuário ou senha inválidos.'
