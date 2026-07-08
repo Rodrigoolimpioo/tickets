@@ -50,7 +50,14 @@ def admin():
 @role_required('admin')
 def cfg_ip_toggle():
     cfg = storage.load_config()
-    cfg['ip_control']['enabled'] = not cfg['ip_control'].get('enabled', False)
+    ligando = not cfg['ip_control'].get('enabled', False)
+    cfg['ip_control']['enabled'] = ligando
+    # Ao ativar, garante que quem está ativando não fique trancado pra fora —
+    # adiciona o IP de quem fez a requisição se ele ainda não estiver na lista.
+    if ligando:
+        client_ip = get_client_ip()
+        if client_ip not in cfg['ip_control']['ips']:
+            cfg['ip_control']['ips'].append(client_ip)
     storage.save_config(cfg)
     return redirect(url_for('config.configuracoes', tab='ips'))
 
