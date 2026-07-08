@@ -35,10 +35,18 @@ def criar_usuario(username: str, password: str, name: str, role: str,
     if role not in ROLES_VALIDOS:
         role = 'funcionario'
 
+    cfg = storage.load_config()
     if perfil_id:
-        cfg = storage.load_config()
         if not any(p['id'] == perfil_id for p in cfg.get('perfis', [])):
             perfil_id = None
+
+    # Se nenhum perfil foi escolhido, usa o perfil padrão do role
+    # (perfil-supervisor ou perfil-funcionario) para que mudanças nos
+    # perfis reflitam no usuário sem precisar de re-login.
+    if not perfil_id and role in ('supervisor', 'funcionario'):
+        default_id = f'perfil-{role}'
+        if any(p['id'] == default_id for p in cfg.get('perfis', [])):
+            perfil_id = default_id
 
     novo = {
         'id': str(uuid.uuid4()), 'username': username,

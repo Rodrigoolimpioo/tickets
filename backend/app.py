@@ -112,6 +112,20 @@ def check_access_controls():
     if request.endpoint in ENDPOINTS_LIVRES or request.endpoint is None:
         return None
 
+    # Mantém as permissões da sessão sincronizadas com o perfil atual (config
+    # cacheada por 60s). Garante que mudanças no perfil pelo admin reflitam
+    # nos usuários já logados sem exigir re-login.
+    if 'user_id' in session and session.get('role') != 'admin':
+        perfil_id = session.get('perfil_id')
+        if not perfil_id:
+            perfil_id = f"perfil-{session.get('role', 'funcionario')}"
+        cfg_sync = storage.load_config()
+        perfil_sync = next((p for p in cfg_sync.get('perfis', []) if p['id'] == perfil_id), None)
+        if perfil_sync:
+            new_perms = perfil_sync.get('permissoes', [])
+            if new_perms != session.get('permissoes'):
+                session['permissoes'] = new_perms
+
     is_api = request.path.startswith('/api/')
 
     # Proteção CSRF nos POSTs feitos via cookie de sessão.

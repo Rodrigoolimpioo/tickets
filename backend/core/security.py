@@ -110,14 +110,19 @@ def get_user_permissoes(user: dict) -> list:
     if user.get('role') == 'admin':
         return PERMISSOES_IDS[:]
 
-    perfil_id = user.get('perfil_id')
-    if perfil_id:
-        cfg = storage.load_config()
-        perfil = next((p for p in cfg.get('perfis', []) if p['id'] == perfil_id), None)
-        if perfil:
-            return perfil.get('permissoes', [])
+    cfg = storage.load_config()
 
-    # Fallback por role, caso o usuário não tenha um perfil customizado
+    perfil_id = user.get('perfil_id')
+    if not perfil_id:
+        # Sem perfil explícito: usa o perfil padrão do role (perfil-supervisor / perfil-funcionario)
+        role = user.get('role', 'funcionario')
+        perfil_id = f'perfil-{role}'
+
+    perfil = next((p for p in cfg.get('perfis', []) if p['id'] == perfil_id), None)
+    if perfil:
+        return perfil.get('permissoes', [])
+
+    # Último recurso: permissões mínimas hardcoded (só alcançado se o perfil padrão foi excluído)
     role = user.get('role', 'funcionario')
     if role == 'supervisor':
         return ['dashboard', 'acompanhamento', 'ver_ticket', 'atualizar_ticket', 'comentar_ticket', 'meu_perfil']
