@@ -4,10 +4,11 @@ from core import storage
 from core.audit import log_evento
 from core.security import (
     csrf_valid, deny_response, get_user_permissoes,
-    rate_limit_exceeded, register_failed_login, verify_password, hash_password,
-    _is_hashed,
+    rate_limit_exceeded, register_failed_login, register_rate_limited_event,
+    verify_password, hash_password, _is_hashed,
 )
 from core.config import _LOGIN_LOCKOUT_MIN
+from core.services import password_reset_service
 from core.time_utils import get_brasilia_time, get_client_ip
 
 auth_bp = Blueprint('auth', __name__)
@@ -72,3 +73,56 @@ def logout():
 def acesso_negado():
     return render_template('acesso_negado.html', motivo='manual',
                            hora=get_brasilia_time().strftime('%d/%m/%Y %H:%M:%S')), 403
+
+
+@auth_bp.route('/esqueci-senha', methods=['GET', 'POST'])
+def esqueci_senha():
+    if 'user_id' in session:
+        return redirect(url_for('dashboard.dashboard'))
+    enviado = False
+    if request.method == 'POST':
+        token = request.form.get('_csrf_token', '')
+        if not csrf_valid(token):
+            return deny_response('csrf')
+        client_ip = get_client_ip()
+        # Limite mais generoso que o de login (não é força bruta de senha,
+        # é só pra não deixar alguém disparar e-mails em looping).
+        if not rate_limit_exceeded(client_ip, acao='reset_senha_solicitado', limite=5, janela_minutos=15):
+            email = request.form.get('email', '')
+            password_reset_service.solicitar_reset(email)
+            register_rate_limited_event(client_ip, 'reset_senha_solicitado', detalhes=email)
+        enviado = True
+    return render_template('esqueci_senha.html', enviado=enviado)
+
+
+@auth_bp.route('/resetar-senha/<token>', methods=['GET', 'POST'])
+def resetar_senha(token):
+    if 'user_id' in session:
+        return redirect(url_for('dashboard.dashboard'))
+
+    user = password_reset_service.validar_token(token)
+    if not user:
+        return render_template('resetar_senha.html', invalido=True, token=token)
+
+    error = None
+    if request.method == 'POST':
+        csrf = request.form.get('_csrf_token', '')
+        if not csrf_valid(csrf):
+            return deny_response('csrf')
+        ok, err = password_reset_service.redefinir_senha(
+            token,
+            request.form.get('nova_senha', ''),
+            request.form.get('confirmar_senha', ''),
+        )
+        if ok:
+            log_evento('usuario_senha_alterada', detalhes=f"{user['username']} (via reset por e-mail)",
+                       entidade_tipo='usuario', entidade_id=user['id'],
+                       usuario_id=user['id'], usuario_nome=user['name'])
+            return render_template('resetar_senha.html', sucesso=True, token=token)
+        error = {
+            'senhas_diferentes': 'As senhas não coincidem.',
+            'senha_curta': 'A senha deve ter pelo menos 8 caracteres.',
+            'token_invalido': 'Esse link é inválido ou já expirou.',
+        }.get(err, 'Não foi possível redefinir a senha.')
+
+    return render_template('resetar_senha.html', token=token, error=error)

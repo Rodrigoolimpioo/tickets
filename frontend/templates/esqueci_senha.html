@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Esqueci minha senha — {{ g_nome_sistema }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  {% if cfg_global %}
+  {% set p = cfg_global.get('personalizacao', {}) %}
+  {% set cor_botao = p.get('cor_botao', '#111111') %}
+  {% else %}
+  {% set cor_botao = '#111111' %}
+  {% endif %}
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, {{ cor_botao }}, #1a1a1a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .login-card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    }
+    .brand { text-align: center; margin-bottom: 28px; }
+    .brand-icon {
+      width: 72px; height: 72px; background: #ffffff; border-radius: 18px;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+    .brand-icon i { color: {{ cor_botao }}; font-size: 32px; }
+    .brand h1 { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .brand p { color: #64748b; font-size: 14px; margin-top: 4px; }
+    .form-label { font-weight: 600; color: #374151; font-size: 14px; }
+    .form-control {
+      border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; font-size: 15px;
+    }
+    .form-control:focus { border-color: {{ cor_botao }}; box-shadow: 0 0 0 3px rgba(0,0,0,0.08); }
+    .input-group-text {
+      background: #f8fafc; border: 1.5px solid #e2e8f0; border-right: none;
+      border-radius: 10px 0 0 10px; color: #64748b;
+    }
+    .input-group .form-control { border-left: none; border-radius: 0 10px 10px 0; }
+    .btn-login {
+      background: {{ cor_botao }}; border: none; border-radius: 10px; padding: 13px;
+      font-size: 16px; font-weight: 600; color: white; width: 100%; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    }
+    .btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    .alert-info {
+      background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
+      border-radius: 10px; padding: 12px 16px; font-size: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .mb-4 { margin-bottom: 20px; }
+    .mb-6 { margin-bottom: 24px; }
+    .footer-text { text-align: center; color: #94a3b8; font-size: 12px; margin-top: 20px; }
+    .footer-text a { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-key"></i></div>
+      <h1>Esqueci minha senha</h1>
+      <p>Informe seu e-mail cadastrado para receber um link de redefinição</p>
+    </div>
+
+    {% if enviado %}
+    <div class="alert-info mb-4">
+      <i class="fa-solid fa-circle-info"></i>
+      Se esse e-mail estiver cadastrado, enviamos um link de redefinição para ele.
+      Confira também a caixa de spam.
+    </div>
+    {% else %}
+    <form method="POST" action="{{ url_for('auth.esqueci_senha') }}">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+      <div class="mb-6">
+        <label class="form-label">E-mail cadastrado</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
+          <input type="email" name="email" class="form-control" placeholder="seu@email.com" required autofocus />
+        </div>
+      </div>
+      <button type="submit" class="btn-login">
+        <i class="fa-solid fa-paper-plane"></i> &nbsp;Enviar link de redefinição
+      </button>
+    </form>
+    {% endif %}
+
+    <div class="footer-text">
+      <a href="{{ url_for('auth.login') }}"><i class="fa-solid fa-arrow-left"></i> Voltar para o login</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -81,3 +81,15 @@ _LOGIN_LOCKOUT_MIN = 15
 # login sem precisar mexer em código/redeploy. Reative colocando
 # LOGIN_RATE_LIMIT_ENABLED=true (ou removendo a variável) no .env.
 LOGIN_RATE_LIMIT_ENABLED = os.environ.get('LOGIN_RATE_LIMIT_ENABLED', 'true').strip().lower() != 'false'
+
+# ── E-mail (fluxo de "esqueci minha senha") ──────────────────────────
+SMTP_HOST = os.environ.get('SMTP_HOST')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
+SMTP_USER = os.environ.get('SMTP_USER')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD')
+SMTP_FROM = os.environ.get('SMTP_FROM') or SMTP_USER
+
+# URL pública usada para montar o link de redefinição de senha no e-mail.
+APP_BASE_URL = os.environ.get('APP_BASE_URL', 'http://localhost:5000')
+
+RESET_TOKEN_EXP_MINUTES = int(os.environ.get('RESET_TOKEN_EXP_MINUTES', '30'))

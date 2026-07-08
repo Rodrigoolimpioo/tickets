@@ -63,17 +63,25 @@ def hash_password(password: str) -> str:
 #  workers Gunicorn, cada processo teria seu próprio contador isolado,
 #  deixando o limite furável (bastava a requisição cair em outro worker).
 
-def rate_limit_exceeded(ip: str) -> bool:
+def rate_limit_exceeded(ip: str, acao: str = 'login_falha', limite: int = None,
+                        janela_minutos: int = None) -> bool:
     if not LOGIN_RATE_LIMIT_ENABLED:
         return False
-    cutoff = get_brasilia_time().replace(tzinfo=None) - timedelta(minutes=_LOGIN_LOCKOUT_MIN)
-    return logs_repository.contar_desde('login_falha', ip, cutoff) >= _LOGIN_MAX
+    janela = janela_minutos if janela_minutos is not None else _LOGIN_LOCKOUT_MIN
+    cutoff = get_brasilia_time().replace(tzinfo=None) - timedelta(minutes=janela)
+    return logs_repository.contar_desde(acao, ip, cutoff) >= (limite or _LOGIN_MAX)
 
 
 def register_failed_login(ip: str, username: str = None) -> None:
     logs_repository.registrar(
         acao='login_falha', quando=get_brasilia_time().replace(tzinfo=None), ip=ip,
         usuario_nome=username, detalhes=f'usuário tentado: {username}' if username else None,
+    )
+
+
+def register_rate_limited_event(ip: str, acao: str, detalhes: str = None) -> None:
+    logs_repository.registrar(
+        acao=acao, quando=get_brasilia_time().replace(tzinfo=None), ip=ip, detalhes=detalhes,
     )
 
 

@@ -146,6 +146,12 @@
       </button>
     </form>
 
+    <div class="footer-text" style="margin-top:16px">
+      <a href="{{ url_for('auth.esqueci_senha') }}" style="color:#64748b; text-decoration:none">
+        <i class="fa-solid fa-key"></i> Esqueci minha senha
+      </a>
+    </div>
+
     <div class="footer-text">
       {{ g_nome_sistema }} &copy; {{ now.year if now else '2025' }} — Uso interno
     </div>
