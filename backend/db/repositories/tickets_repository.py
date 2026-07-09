@@ -44,15 +44,22 @@ def list_tickets() -> list:
         tickets = rows_to_dicts(cursor)
 
         cursor.execute(
-            "SELECT ID, TICKET_ID, ACAO, POR, DATA FROM TICKET_HISTORICO ORDER BY ID"
+            "SELECT ID, TICKET_ID, ACAO, POR, DATA, ARQUIVO_FILENAME, ARQUIVO_ORIGINAL_NAME "
+            "FROM TICKET_HISTORICO ORDER BY ID"
         )
         historico_por_ticket: dict = {}
         for row in rows_to_dicts(cursor):
-            historico_por_ticket.setdefault(row['ticket_id'], []).append({
+            entrada = {
                 'acao': row['acao'],
                 'por': row['por'],
                 'data': row['data'].strftime(_DATA_FORMATADA_FMT),
-            })
+            }
+            if row.get('arquivo_filename'):
+                entrada['arquivo'] = {
+                    'filename': row['arquivo_filename'],
+                    'original_name': row['arquivo_original_name'],
+                }
+            historico_por_ticket.setdefault(row['ticket_id'], []).append(entrada)
 
     return [_ticket_to_dict(t, historico_por_ticket.get(t['id'], [])) for t in tickets]
 
@@ -133,9 +140,13 @@ def save_tickets(tickets: list) -> None:
         for ticket in tickets:
             cursor.execute("DELETE FROM TICKET_HISTORICO WHERE TICKET_ID = :id", id=ticket['id'])
             for entrada in ticket.get('historico', []):
+                arq = entrada.get('arquivo') or {}
                 cursor.execute(
-                    "INSERT INTO TICKET_HISTORICO (TICKET_ID, ACAO, POR, DATA) "
-                    "VALUES (:ticket_id, :acao, :por, :data)",
+                    "INSERT INTO TICKET_HISTORICO "
+                    "(TICKET_ID, ACAO, POR, DATA, ARQUIVO_FILENAME, ARQUIVO_ORIGINAL_NAME) "
+                    "VALUES (:ticket_id, :acao, :por, :data, :arq_fname, :arq_oname)",
                     ticket_id=ticket['id'], acao=entrada['acao'], por=entrada['por'],
                     data=datetime.strptime(entrada['data'], _DATA_FORMATADA_FMT),
+                    arq_fname=arq.get('filename'),
+                    arq_oname=arq.get('original_name'),
                 )

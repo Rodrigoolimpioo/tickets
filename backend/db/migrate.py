@@ -16,7 +16,8 @@ from .connection import get_cursor
 
 logger = logging.getLogger(__name__)
 
-_ORA_NAME_ALREADY_USED = 955  # ORA-00955: name is already used by an existing object
+_ORA_NAME_ALREADY_USED = 955   # ORA-00955: name is already used by an existing object
+_ORA_COLUMN_EXISTS     = 1430  # ORA-01430: column being added already exists in table
 
 _DDL_STATEMENTS = [
     """
@@ -64,11 +65,13 @@ _DDL_STATEMENTS = [
     """,
     """
     CREATE TABLE TICKET_HISTORICO (
-        ID         NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        TICKET_ID  VARCHAR2(36)  NOT NULL REFERENCES TICKETS(ID) ON DELETE CASCADE,
-        ACAO       VARCHAR2(500) NOT NULL,
-        POR        VARCHAR2(200) NOT NULL,
-        DATA       TIMESTAMP     NOT NULL
+        ID                    NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        TICKET_ID             VARCHAR2(36)  NOT NULL REFERENCES TICKETS(ID) ON DELETE CASCADE,
+        ACAO                  VARCHAR2(500) NOT NULL,
+        POR                   VARCHAR2(200) NOT NULL,
+        DATA                  TIMESTAMP     NOT NULL,
+        ARQUIVO_FILENAME      VARCHAR2(500),
+        ARQUIVO_ORIGINAL_NAME VARCHAR2(500)
     )
     """,
     """
@@ -133,6 +136,23 @@ def _create_tables(cursor):
         except oracledb.DatabaseError as exc:
             (error,) = exc.args
             if getattr(error, 'code', None) == _ORA_NAME_ALREADY_USED:
+                continue
+            raise
+
+
+_ALTER_STATEMENTS = [
+    "ALTER TABLE TICKET_HISTORICO ADD ARQUIVO_FILENAME      VARCHAR2(500)",
+    "ALTER TABLE TICKET_HISTORICO ADD ARQUIVO_ORIGINAL_NAME VARCHAR2(500)",
+]
+
+
+def _add_missing_columns(cursor):
+    for ddl in _ALTER_STATEMENTS:
+        try:
+            cursor.execute(ddl)
+        except oracledb.DatabaseError as exc:
+            (error,) = exc.args
+            if getattr(error, 'code', None) == _ORA_COLUMN_EXISTS:
                 continue
             raise
 
@@ -225,6 +245,7 @@ def run():
     dados padrão apenas se as tabelas estiverem vazias."""
     with get_cursor(commit=True) as cursor:
         _create_tables(cursor)
+        _add_missing_columns(cursor)
         _seed_perfis(cursor)
         _seed_config(cursor)
         _seed_users(cursor)
