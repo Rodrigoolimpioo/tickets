@@ -1,4 +1,5 @@
 from .. import storage
+from ..audit import log_evento
 from ..config import APP_BASE_URL
 from ..whatsapp import enviar_whatsapp
 
@@ -12,7 +13,8 @@ status), são notificados quem abriu o ticket (se for supervisor ou
 funcionário) e, sempre, todos os supervisores — que atuam como uma camada
 de acompanhamento geral, independente de terem aberto o ticket ou não.
 Cada evento respeita o toggle + mensagem customizável daquele status em
-Configurações → WhatsApp."""
+Configurações → WhatsApp. Todo envio (sucesso ou falha) é registrado em
+LOGS_AUDITORIA — ver _enviar_e_logar."""
 
 _ROLES_NOTIFICADOS_NA_ABERTURA_DO_PROPRIO_TICKET = {'supervisor', 'funcionario'}
 
@@ -71,6 +73,18 @@ def _config_status(novo_status: str):
     return ativo, template
 
 
+def _enviar_e_logar(ticket: dict, telefone: str, destinatario: str, mensagem: str) -> None:
+    """Envia e sempre registra o resultado em LOGS_AUDITORIA — toda
+    comunicação por WhatsApp (sucesso ou falha) fica auditável, com o
+    ticket, o destinatário e o número usado."""
+    ok = enviar_whatsapp(telefone, mensagem)
+    log_evento(
+        'whatsapp_enviado' if ok else 'whatsapp_falhou',
+        detalhes=f"Ticket {ticket['numero']} → {destinatario} ({telefone})",
+        entidade_tipo='ticket', entidade_id=ticket['id'],
+    )
+
+
 def notificar_ticket_aberto(ticket: dict) -> None:
     """Dispara para todo admin ativo com telefone cadastrado, gatilhado
     pelo toggle do status 'Aberto'. A {comentario} do template, aqui,
@@ -90,7 +104,7 @@ def notificar_ticket_aberto(ticket: dict) -> None:
     mensagem = _montar_mensagem(ticket, 'Aberto', ticket.get('ocorrencia', ''),
                                  ticket.get('criado_por', ''), template)
     for admin in admins:
-        enviar_whatsapp(admin['telefone'], mensagem)
+        _enviar_e_logar(ticket, admin['telefone'], f"{admin['name']} (admin)", mensagem)
 
 
 def notificar_status_ticket(ticket: dict, novo_status: str, comentario: str, atualizado_por: str) -> None:
@@ -98,26 +112,27 @@ def notificar_status_ticket(ticket: dict, novo_status: str, comentario: str, atu
     funcionário) e sempre para todos os supervisores ativos com telefone —
     administrador não recebe notificação de resposta (só a de abertura,
     via notificar_ticket_aberto). Um mesmo telefone nunca recebe duas
-    mensagens (ex.: supervisor que abriu o próprio ticket)."""
+    mensagens (ex.: supervisor que abriu o próprio ticket) — o dict abaixo
+    dedupa por telefone mantendo um rótulo pro log."""
     ativo, template = _config_status(novo_status)
     if not ativo:
         return
 
     usuarios = storage.load_users()
-    telefones = set()
+    destinatarios: dict[str, str] = {}  # telefone -> rótulo (pro log)
 
     criador = next((u for u in usuarios if u['id'] == ticket.get('criado_por_id')), None)
     if (criador and criador.get('role') in _ROLES_NOTIFICADOS_NA_ABERTURA_DO_PROPRIO_TICKET
             and criador.get('telefone')):
-        telefones.add(criador['telefone'])
+        destinatarios[criador['telefone']] = f"{criador['name']} (abriu o ticket, {criador['role']})"
 
     for u in usuarios:
         if u.get('role') == 'supervisor' and u.get('ativo', True) and u.get('telefone'):
-            telefones.add(u['telefone'])
+            destinatarios.setdefault(u['telefone'], f"{u['name']} (supervisor)")
 
-    if not telefones:
+    if not destinatarios:
         return
 
     mensagem = _montar_mensagem(ticket, novo_status, comentario, atualizado_por, template)
-    for telefone in telefones:
-        enviar_whatsapp(telefone, mensagem)
+    for telefone, destinatario in destinatarios.items():
+        _enviar_e_logar(ticket, telefone, destinatario, mensagem)

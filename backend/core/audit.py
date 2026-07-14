@@ -17,6 +17,7 @@ ACOES = [
     'config_personalizacao_atualizada', 'config_logo_atualizado', 'config_logo_removido',
     'config_whatsapp_ativado', 'config_whatsapp_desativado',
     'config_whatsapp_status_atualizado',
+    'whatsapp_enviado', 'whatsapp_falhou',
 ]
 
 
