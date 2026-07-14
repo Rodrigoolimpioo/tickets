@@ -93,3 +93,8 @@ SMTP_FROM = os.environ.get('SMTP_FROM') or SMTP_USER
 APP_BASE_URL = os.environ.get('APP_BASE_URL', 'http://localhost:5000')
 
 RESET_TOKEN_EXP_MINUTES = int(os.environ.get('RESET_TOKEN_EXP_MINUTES', '30'))
+
+# ── WhatsApp (notificação de andamento de ticket via Z-API) ──────────
+ZAPI_INSTANCE_ID = os.environ.get('ZAPI_INSTANCE_ID')
+ZAPI_TOKEN = os.environ.get('ZAPI_TOKEN')
+ZAPI_CLIENT_TOKEN = os.environ.get('ZAPI_CLIENT_TOKEN')

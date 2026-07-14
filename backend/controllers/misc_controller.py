@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, send_from_directory, sess
 
 from core import storage
 from core.config import PASSWORD_MIN, UPLOADS_DIR
-from core.security import hash_password, login_required, permission_required, verify_password
+from core.security import hash_password, login_required, permission_required, valid_telefone, verify_password
 
 misc_bp = Blueprint('misc', __name__)
 
@@ -16,20 +16,27 @@ def meu_perfil():
     success = error = None
 
     if request.method == 'POST':
-        senha_atual = request.form.get('senha_atual', '').strip()
-        nova_senha  = request.form.get('nova_senha', '').strip()
-        confirmar   = request.form.get('confirmar_senha', '').strip()
+        form = request.form.get('form', 'senha')
 
-        if not verify_password(user['password'], senha_atual):
-            error = 'Senha atual incorreta.'
-        elif nova_senha != confirmar:
-            error = 'As senhas não coincidem.'
-        elif len(nova_senha) < PASSWORD_MIN:
-            error = f'A nova senha deve ter pelo menos {PASSWORD_MIN} caracteres.'
-        else:
-            user['password'] = hash_password(nova_senha)
+        if form == 'telefone':
+            user['telefone'] = valid_telefone(request.form.get('telefone'), fallback='')
             storage.save_users(users)
-            success = 'Senha alterada com sucesso!'
+            success = 'Telefone/WhatsApp atualizado com sucesso!'
+        else:
+            senha_atual = request.form.get('senha_atual', '').strip()
+            nova_senha  = request.form.get('nova_senha', '').strip()
+            confirmar   = request.form.get('confirmar_senha', '').strip()
+
+            if not verify_password(user['password'], senha_atual):
+                error = 'Senha atual incorreta.'
+            elif nova_senha != confirmar:
+                error = 'As senhas não coincidem.'
+            elif len(nova_senha) < PASSWORD_MIN:
+                error = f'A nova senha deve ter pelo menos {PASSWORD_MIN} caracteres.'
+            else:
+                user['password'] = hash_password(nova_senha)
+                storage.save_users(users)
+                success = 'Senha alterada com sucesso!'
 
     return render_template('perfil.html', user=user, success=success, error=error)
 

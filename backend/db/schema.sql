@@ -24,6 +24,7 @@ CREATE TABLE USERS (
     NAME        VARCHAR2(200) NOT NULL,
     ROLE        VARCHAR2(20)  NOT NULL,
     EMAIL       VARCHAR2(200),
+    TELEFONE    VARCHAR2(20),
     ATIVO       NUMBER(1)     DEFAULT 1 NOT NULL,
     -- Sem FK para PERFIS: um perfil pode ser excluído e deixar usuários
     -- com perfil_id "órfão" — nesse caso o sistema cai no fallback por role
@@ -49,11 +50,13 @@ CREATE TABLE TICKETS (
 );
 
 CREATE TABLE TICKET_HISTORICO (
-    ID         NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    TICKET_ID  VARCHAR2(36)  NOT NULL REFERENCES TICKETS(ID) ON DELETE CASCADE,
-    ACAO       VARCHAR2(500) NOT NULL,
-    POR        VARCHAR2(200) NOT NULL,
-    DATA       TIMESTAMP     NOT NULL
+    ID                    NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    TICKET_ID             VARCHAR2(36)  NOT NULL REFERENCES TICKETS(ID) ON DELETE CASCADE,
+    ACAO                  VARCHAR2(500) NOT NULL,
+    POR                   VARCHAR2(200) NOT NULL,
+    DATA                  TIMESTAMP     NOT NULL,
+    ARQUIVO_FILENAME      VARCHAR2(500),
+    ARQUIVO_ORIGINAL_NAME VARCHAR2(500)
 );
 
 CREATE TABLE CONFIG_GERAL (
@@ -68,11 +71,22 @@ CREATE TABLE CONFIG_GERAL (
     COR_SIDEBAR              VARCHAR2(7)   DEFAULT '#0f172a' NOT NULL,
     COR_SIDEBAR_ATIVO        VARCHAR2(7)   DEFAULT '#111111' NOT NULL,
     COR_TEXTO                VARCHAR2(7)   DEFAULT '#0f172a' NOT NULL,
-    COR_SIDEBAR_TEXTO        VARCHAR2(7)   DEFAULT '#94a3b8' NOT NULL
+    COR_SIDEBAR_TEXTO        VARCHAR2(7)   DEFAULT '#94a3b8' NOT NULL,
+    WHATSAPP_ENABLED         NUMBER(1)     DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE IPS_PERMITIDOS (
     IP  VARCHAR2(45) PRIMARY KEY
+);
+
+-- Um toggle por status de ticket (ver core/config.STATUS_LIST) definindo
+-- se aquela transição dispara notificação de WhatsApp, com uma mensagem
+-- customizável por status (aceita placeholders — ver whatsapp_service.py).
+-- MENSAGEM nula/vazia usa o texto padrão gerado pelo sistema.
+CREATE TABLE WHATSAPP_STATUS_CONFIG (
+    STATUS    VARCHAR2(30)   PRIMARY KEY,
+    ATIVO     NUMBER(1)      DEFAULT 0 NOT NULL,
+    MENSAGEM  VARCHAR2(1000)
 );
 
 CREATE TABLE HORARIOS_CONTROLE (

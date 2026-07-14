@@ -7,7 +7,7 @@ from db.repositories import logs_repository
 
 from core import storage
 from core.audit import ACOES, log_evento
-from core.config import LOGO_EXTENSIONS, UPLOADS_DIR
+from core.config import LOGO_EXTENSIONS, STATUS_LIST, UPLOADS_DIR
 from core.security import login_required, role_required, valid_hex, valid_ip, valid_time
 from core.time_utils import get_client_ip
 
@@ -47,7 +47,8 @@ def configuracoes():
                            msg=msg, err=err,
                            perfis=perfis, perfis_dict=perfis_dict,
                            logs=logs, acoes_log=ACOES,
-                           filtro_acao=filtro_acao, filtro_usuario=filtro_usuario, busca_logs=busca_logs)
+                           filtro_acao=filtro_acao, filtro_usuario=filtro_usuario, busca_logs=busca_logs,
+                           status_list=STATUS_LIST)
 
 
 @config_bp.route('/admin')
@@ -223,3 +224,31 @@ def cfg_logo_remover():
         storage.save_config(cfg)
         log_evento('config_logo_removido')
     return redirect(url_for('config.configuracoes', tab='personalizacao', msg='logo_removido'))
+
+
+# ── WhatsApp ──────────────────────────────
+
+@config_bp.route('/configuracoes/whatsapp/toggle', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_whatsapp_toggle():
+    cfg = storage.load_config()
+    ligando = not cfg['whatsapp'].get('enabled', False)
+    cfg['whatsapp']['enabled'] = ligando
+    storage.save_config(cfg)
+    log_evento('config_whatsapp_ativado' if ligando else 'config_whatsapp_desativado')
+    return redirect(url_for('config.configuracoes', tab='whatsapp'))
+
+
+@config_bp.route('/configuracoes/whatsapp/status/atualizar', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_whatsapp_status_atualizar():
+    cfg = storage.load_config()
+    for status in STATUS_LIST:
+        cfg['whatsapp']['status_ativo'][status] = f'status_{status}' in request.form
+        mensagem = request.form.get(f'mensagem_{status}', '').strip()[:1000]
+        cfg['whatsapp']['status_mensagem'][status] = mensagem
+    storage.save_config(cfg)
+    log_evento('config_whatsapp_status_atualizado')
+    return redirect(url_for('config.configuracoes', tab='whatsapp', msg='whatsapp_status_salvo'))

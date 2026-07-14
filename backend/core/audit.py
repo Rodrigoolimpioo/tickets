@@ -15,6 +15,8 @@ ACOES = [
     'config_horario_ativado', 'config_horario_desativado', 'config_horario_atualizado',
     'config_sistema_adicionado', 'config_sistema_removido',
     'config_personalizacao_atualizada', 'config_logo_atualizado', 'config_logo_removido',
+    'config_whatsapp_ativado', 'config_whatsapp_desativado',
+    'config_whatsapp_status_atualizado',
 ]
 
 

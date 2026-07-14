@@ -31,6 +31,10 @@
           <span class="resumo-value">{{ user.email or '—' }}</span>
         </div>
         <div class="resumo-item">
+          <span class="resumo-label">Telefone/WhatsApp</span>
+          <span class="resumo-value">{{ user.telefone or '—' }}</span>
+        </div>
+        <div class="resumo-item">
           <span class="resumo-label">Perfil de acesso</span>
           <span class="resumo-value">{{ get_role_label(user.role) }}</span>
         </div>
@@ -41,23 +45,44 @@
       </div>
     </div>
 
+    {% if success %}
+    <div class="alert-msg alert-success mb-3">
+      <i class="fa-solid fa-circle-check"></i> {{ success }}
+    </div>
+    {% endif %}
+    {% if error %}
+    <div class="alert-msg alert-error mb-3">
+      <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="card-panel mb-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-brands fa-whatsapp"></i> Telefone/WhatsApp</h5>
+      </div>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px">
+        Usado para receber notificações por WhatsApp do andamento dos seus tickets.
+      </p>
+      <form method="POST" action="{{ url_for('misc.meu_perfil') }}">
+        <input type="hidden" name="form" value="telefone" />
+        <div class="form-group">
+          <label class="form-lbl">Número (com DDD)</label>
+          <input type="text" name="telefone" class="form-inp" value="{{ user.telefone or '' }}"
+                 placeholder="Ex.: 11987654321" />
+        </div>
+        <button type="submit" class="btn-submit">
+          <i class="fa-solid fa-floppy-disk"></i> Salvar Telefone
+        </button>
+      </form>
+    </div>
+
     <div class="card-panel">
       <div class="card-panel-header">
         <h5><i class="fa-solid fa-lock"></i> Alterar Senha</h5>
       </div>
 
-      {% if success %}
-      <div class="alert-msg alert-success mb-3">
-        <i class="fa-solid fa-circle-check"></i> {{ success }}
-      </div>
-      {% endif %}
-      {% if error %}
-      <div class="alert-msg alert-error mb-3">
-        <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
-      </div>
-      {% endif %}
-
       <form method="POST" action="{{ url_for('misc.meu_perfil') }}">
+        <input type="hidden" name="form" value="senha" />
         <div class="form-group">
           <label class="form-lbl">Senha atual</label>
           <input type="password" name="senha_atual" class="form-inp" required placeholder="Digite sua senha atual" />

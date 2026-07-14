@@ -8,6 +8,7 @@ from core import storage
 from core.audit import log_evento
 from core.config import STATUS_LIST, UPLOADS_DIR
 from core.security import login_required, permission_required, role_required
+from core.services import whatsapp_service
 from core.time_utils import get_brasilia_time
 
 tickets_bp = Blueprint('tickets', __name__)
@@ -63,6 +64,7 @@ def abrir_ticket():
                 storage.save_tickets(tickets)
                 log_evento('ticket_criado', detalhes=f"{ticket['numero']} — {nome}",
                            entidade_tipo='ticket', entidade_id=ticket['id'])
+                whatsapp_service.notificar_ticket_aberto(ticket)
                 return redirect(url_for('tickets.ver_ticket', ticket_id=ticket['id']))
 
     return render_template('abrir_ticket.html', sistemas=storage.get_sistemas(), error=error)
@@ -127,6 +129,7 @@ def atualizar_ticket(ticket_id):
         storage.save_tickets(tickets)
         log_evento('ticket_atualizado', detalhes=f"{ticket['numero']} — {entrada}",
                    entidade_tipo='ticket', entidade_id=ticket_id)
+        whatsapp_service.notificar_status_ticket(ticket, novo_status, comentario, session['name'])
     return redirect(url_for('tickets.ver_ticket', ticket_id=ticket_id))
 
 

@@ -27,6 +27,7 @@ def cfg_criar_usuario():
         name=request.form.get('name', ''),
         role=request.form.get('role', 'funcionario'),
         email=request.form.get('email', ''),
+        telefone=request.form.get('telefone', ''),
         perfil_id=request.form.get('perfil_id', ''),
     )
     if not ok:

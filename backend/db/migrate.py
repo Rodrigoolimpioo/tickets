@@ -19,6 +19,22 @@ logger = logging.getLogger(__name__)
 _ORA_NAME_ALREADY_USED = 955   # ORA-00955: name is already used by an existing object
 _ORA_COLUMN_EXISTS     = 1430  # ORA-01430: column being added already exists in table
 
+# ALTERs aplicados em bases já existentes (criadas antes desses campos
+# existirem). Em base nova, as colunas já nascem via _DDL_STATEMENTS acima
+# e esses ALTERs viram no-op (idempotente via catch de ORA-01430).
+_ALTER_STATEMENTS = [
+    "ALTER TABLE TICKET_HISTORICO ADD ARQUIVO_FILENAME      VARCHAR2(500)",
+    "ALTER TABLE TICKET_HISTORICO ADD ARQUIVO_ORIGINAL_NAME VARCHAR2(500)",
+    "ALTER TABLE USERS ADD (TELEFONE VARCHAR2(20))",
+    "ALTER TABLE CONFIG_GERAL ADD (WHATSAPP_ENABLED NUMBER(1) DEFAULT 0 NOT NULL)",
+    "ALTER TABLE WHATSAPP_STATUS_CONFIG ADD (MENSAGEM VARCHAR2(1000))",
+    # WHATSAPP_NUMERO_EQUIPE existiu numa versão anterior da feature (número
+    # fixo de equipe) e foi substituído por notificação individual por admin
+    # (ver core/services/whatsapp_service.py). Removido do DDL de base nova;
+    # em bases já existentes a coluna fica órfã (não usada, não removida —
+    # DROP COLUMN não entra em migration automática).
+]
+
 _DDL_STATEMENTS = [
     """
     CREATE TABLE PERFIS (
@@ -43,6 +59,7 @@ _DDL_STATEMENTS = [
         NAME        VARCHAR2(200) NOT NULL,
         ROLE        VARCHAR2(20)  NOT NULL,
         EMAIL       VARCHAR2(200),
+        TELEFONE    VARCHAR2(20),
         ATIVO       NUMBER(1)     DEFAULT 1 NOT NULL,
         PERFIL_ID   VARCHAR2(36)
     )
@@ -87,10 +104,18 @@ _DDL_STATEMENTS = [
         COR_SIDEBAR              VARCHAR2(7)   DEFAULT '#0f172a' NOT NULL,
         COR_SIDEBAR_ATIVO        VARCHAR2(7)   DEFAULT '#111111' NOT NULL,
         COR_TEXTO                VARCHAR2(7)   DEFAULT '#0f172a' NOT NULL,
-        COR_SIDEBAR_TEXTO        VARCHAR2(7)   DEFAULT '#94a3b8' NOT NULL
+        COR_SIDEBAR_TEXTO        VARCHAR2(7)   DEFAULT '#94a3b8' NOT NULL,
+        WHATSAPP_ENABLED         NUMBER(1)     DEFAULT 0 NOT NULL
     )
     """,
     "CREATE TABLE IPS_PERMITIDOS (IP VARCHAR2(45) PRIMARY KEY)",
+    """
+    CREATE TABLE WHATSAPP_STATUS_CONFIG (
+        STATUS    VARCHAR2(30)   PRIMARY KEY,
+        ATIVO     NUMBER(1)      DEFAULT 0 NOT NULL,
+        MENSAGEM  VARCHAR2(1000)
+    )
+    """,
     """
     CREATE TABLE HORARIOS_CONTROLE (
         DIA     NUMBER(1)    PRIMARY KEY,
@@ -140,12 +165,6 @@ def _create_tables(cursor):
             raise
 
 
-_ALTER_STATEMENTS = [
-    "ALTER TABLE TICKET_HISTORICO ADD ARQUIVO_FILENAME      VARCHAR2(500)",
-    "ALTER TABLE TICKET_HISTORICO ADD ARQUIVO_ORIGINAL_NAME VARCHAR2(500)",
-]
-
-
 def _add_missing_columns(cursor):
     for ddl in _ALTER_STATEMENTS:
         try:
@@ -187,11 +206,13 @@ def _seed_config(cursor):
         INSERT INTO CONFIG_GERAL (
             ID, IP_CONTROL_ENABLED, HORARIO_CONTROL_ENABLED, NOME_SISTEMA,
             LOGO_FILENAME, COR_BOTAO, COR_BOTAO_LIGHT, COR_FUNDO, COR_SIDEBAR,
-            COR_SIDEBAR_ATIVO, COR_TEXTO, COR_SIDEBAR_TEXTO
+            COR_SIDEBAR_ATIVO, COR_TEXTO, COR_SIDEBAR_TEXTO,
+            WHATSAPP_ENABLED
         ) VALUES (
             1, :ip_enabled, :horario_enabled, :nome_sistema,
             :logo, :cor_botao, :cor_botao_light, :cor_fundo, :cor_sidebar,
-            :cor_sidebar_ativo, :cor_texto, :cor_sidebar_texto
+            :cor_sidebar_ativo, :cor_texto, :cor_sidebar_texto,
+            :whatsapp_enabled
         )
         """,
         ip_enabled=1 if defaults['ip_control']['enabled'] else 0,
@@ -201,6 +222,7 @@ def _seed_config(cursor):
         cor_fundo=pers['cor_fundo'], cor_sidebar=pers['cor_sidebar'],
         cor_sidebar_ativo=pers['cor_sidebar_ativo'], cor_texto=pers['cor_texto'],
         cor_sidebar_texto=pers['cor_sidebar_texto'],
+        whatsapp_enabled=1 if defaults['whatsapp']['enabled'] else 0,
     )
     for ip in defaults['ip_control']['ips']:
         cursor.execute("INSERT INTO IPS_PERMITIDOS (IP) VALUES (:ip)", ip=ip)
@@ -214,6 +236,24 @@ def _seed_config(cursor):
     for sistema in defaults['sistemas']:
         cursor.execute("INSERT INTO SISTEMAS (NOME) VALUES (:nome)", nome=sistema)
     logger.info('Configuração padrão semeada.')
+
+
+def _seed_whatsapp_status(cursor):
+    # Semeado à parte de _seed_config (que só roda na primeira execução,
+    # antes de CONFIG_GERAL ter qualquer linha) porque essa tabela nasceu
+    # depois — em bases que já tinham CONFIG_GERAL populado, _seed_config
+    # não rodaria de novo e essa tabela ficaria vazia para sempre.
+    cursor.execute("SELECT COUNT(*) FROM WHATSAPP_STATUS_CONFIG")
+    if cursor.fetchone()[0] > 0:
+        return
+    defaults = get_default_config()
+    mensagens = defaults['whatsapp']['status_mensagem']
+    for status, ativo in defaults['whatsapp']['status_ativo'].items():
+        cursor.execute(
+            "INSERT INTO WHATSAPP_STATUS_CONFIG (STATUS, ATIVO, MENSAGEM) VALUES (:status, :ativo, :mensagem)",
+            status=status, ativo=1 if ativo else 0, mensagem=mensagens.get(status) or None,
+        )
+    logger.info('Configuração de status do WhatsApp semeada.')
 
 
 def _seed_users(cursor):
@@ -248,6 +288,7 @@ def run():
         _add_missing_columns(cursor)
         _seed_perfis(cursor)
         _seed_config(cursor)
+        _seed_whatsapp_status(cursor)
         _seed_users(cursor)
 
 

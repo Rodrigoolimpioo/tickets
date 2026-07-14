@@ -1,5 +1,6 @@
 import hmac
 import ipaddress
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -36,6 +37,14 @@ def valid_ip(ip: str) -> bool:
 
 def valid_time(val: str) -> bool:
     return bool(TIME_RE.match(val or ''))
+
+
+def valid_telefone(value: str, fallback: str = '') -> str:
+    """Normaliza para só dígitos (DDI+DDD+número, 10 a 15 dígitos) — mesmo
+    padrão de valid_hex: retorna o valor normalizado ou o fallback se o
+    valor informado for inválido/vazio."""
+    digits = re.sub(r'\D', '', value or '')
+    return digits if 10 <= len(digits) <= 15 else fallback
 
 
 # ─────────────────────────────────────────
@@ -184,12 +193,22 @@ def deny_response(motivo: str, status: int = 403, **ctx):
 #  DECORATORS — autenticação por SESSÃO (telas web)
 # ─────────────────────────────────────────
 
+def safe_next_path(path: str) -> str | None:
+    """Só aceita caminhos internos (ex.: /ticket/abc123) como destino de
+    pós-login — bloqueia URL absoluta ou protocol-relative (//host/...),
+    que serviriam pra redirecionar o usuário logado pra fora do sistema."""
+    if path and path.startswith('/') and not path.startswith('//') and '://' not in path:
+        return path
+    return None
+
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         from flask import redirect, url_for
         if 'user_id' not in session:
-            return redirect(url_for('auth.login'))
+            next_path = safe_next_path(request.full_path.rstrip('?'))
+            return redirect(url_for('auth.login', next=next_path) if next_path else url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated
 

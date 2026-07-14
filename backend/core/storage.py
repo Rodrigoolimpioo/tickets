@@ -3,7 +3,7 @@ import time
 
 from db.repositories import config_repository, tickets_repository, users_repository
 
-from .config import ALLOWED_EXTENSIONS
+from .config import ALLOWED_EXTENSIONS, STATUS_LIST
 
 # Cache em memória da config — evita abrir conexão Oracle em cada requisição.
 # TTL de 60s: mudanças pelo admin aparecem em até 1 minuto sem cache.
@@ -110,6 +110,11 @@ def get_default_config():
             'cor_sidebar_texto':  '#94a3b8',
             'nome_sistema':       'Tickets',
             'logo_filename':      None,
+        },
+        'whatsapp': {
+            'enabled': False,
+            'status_ativo': {status: False for status in STATUS_LIST},
+            'status_mensagem': {status: '' for status in STATUS_LIST},
         },
         'perfis': get_default_perfis(),
     }

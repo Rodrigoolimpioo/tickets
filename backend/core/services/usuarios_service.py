@@ -2,7 +2,7 @@ import uuid
 
 from ..config import PASSWORD_MIN, ROLES_VALIDOS
 from .. import storage
-from ..security import hash_password
+from ..security import hash_password, valid_telefone
 
 """Regras de negócio de usuários, compartilhadas entre o controller web
 (formulários em Configurações) e o controller de API (JSON + JWT) — para
@@ -17,10 +17,11 @@ def listar_usuarios(incluir_senha: bool = False) -> list:
 
 
 def criar_usuario(username: str, password: str, name: str, role: str,
-                   email: str = '', perfil_id: str | None = None):
+                   email: str = '', telefone: str = '', perfil_id: str | None = None):
     username = (username or '').strip()
     password = (password or '').strip()
     name = (name or '').strip()
+    telefone = valid_telefone(telefone, fallback='')
     perfil_id = (perfil_id or '').strip() or None
 
     if not (username and password and name):
@@ -51,7 +52,8 @@ def criar_usuario(username: str, password: str, name: str, role: str,
     novo = {
         'id': str(uuid.uuid4()), 'username': username,
         'password': hash_password(password), 'name': name,
-        'role': role, 'email': (email or '').strip(), 'ativo': True,
+        'role': role, 'email': (email or '').strip(), 'telefone': telefone,
+        'ativo': True,
     }
     if perfil_id:
         novo['perfil_id'] = perfil_id

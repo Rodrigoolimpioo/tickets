@@ -5,7 +5,7 @@ from core.audit import log_evento
 from core.security import (
     csrf_valid, deny_response, get_user_permissoes,
     rate_limit_exceeded, register_failed_login, register_rate_limited_event,
-    verify_password, hash_password, _is_hashed,
+    safe_next_path, verify_password, hash_password, _is_hashed,
 )
 from core.config import _LOGIN_LOCKOUT_MIN
 from core.services import password_reset_service
@@ -34,8 +34,9 @@ def index():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    next_path = safe_next_path(request.values.get('next', ''))
     if 'user_id' in session:
-        return redirect(_home_url())
+        return redirect(next_path or _home_url())
     error = None
     if request.method == 'POST':
         token = request.form.get('_csrf_token', '')
@@ -44,7 +45,7 @@ def login():
         client_ip = get_client_ip()
         if rate_limit_exceeded(client_ip):
             error = f'Muitas tentativas. Aguarde {_LOGIN_LOCKOUT_MIN} minutos.'
-            return render_template('login.html', error=error)
+            return render_template('login.html', error=error, next=next_path)
 
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
@@ -76,11 +77,11 @@ def login():
                 'perfil_id': user.get('perfil_id'),
             })
             log_evento('login_sucesso')
-            return redirect(_home_url())
+            return redirect(next_path or _home_url())
 
         register_failed_login(client_ip, username=username or None)
         error = 'Usuário ou senha inválidos.'
-    return render_template('login.html', error=error)
+    return render_template('login.html', error=error, next=next_path)
 
 
 @auth_bp.route('/logout')
