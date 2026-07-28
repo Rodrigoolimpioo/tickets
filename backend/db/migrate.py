@@ -33,6 +33,12 @@ _ALTER_STATEMENTS = [
     # (ver core/services/whatsapp_service.py). Removido do DDL de base nova;
     # em bases já existentes a coluna fica órfã (não usada, não removida —
     # DROP COLUMN não entra em migration automática).
+    # ACAO era VARCHAR2(500 BYTE) — um comentário de ~1861 chars já estourou
+    # isso em produção (ORA-12899) e derrubou a rota com 500. Aumentar o
+    # tamanho de uma VARCHAR2 é sempre seguro no Oracle (não reescreve dado
+    # existente) e um MODIFY redundante (já no tamanho novo) não dá erro,
+    # então isso não precisa do mesmo tratamento de exceção do ADD COLUMN.
+    "ALTER TABLE TICKET_HISTORICO MODIFY (ACAO VARCHAR2(4000 CHAR))",
 ]
 
 _DDL_STATEMENTS = [
@@ -84,7 +90,7 @@ _DDL_STATEMENTS = [
     CREATE TABLE TICKET_HISTORICO (
         ID                    NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         TICKET_ID             VARCHAR2(36)  NOT NULL REFERENCES TICKETS(ID) ON DELETE CASCADE,
-        ACAO                  VARCHAR2(500) NOT NULL,
+        ACAO                  VARCHAR2(4000 CHAR) NOT NULL,
         POR                   VARCHAR2(200) NOT NULL,
         DATA                  TIMESTAMP     NOT NULL,
         ARQUIVO_FILENAME      VARCHAR2(500),

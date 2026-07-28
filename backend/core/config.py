@@ -51,6 +51,11 @@ HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
 TIME_RE = re.compile(r'^(?:[01]\d|2[0-3]):[0-5]\d$')
 PASSWORD_MIN = 6
 
+# Limite da coluna TICKET_HISTORICO.ACAO (VARCHAR2(4000 CHAR)) — truncar
+# aqui evita repetir o ORA-12899 que já derrubou a rota em produção quando
+# alguém colou um comentário maior que o limite antigo de 500.
+HISTORICO_ACAO_MAX = 4000
+
 # Módulos do sistema que podem ser liberados/bloqueados por perfil de acesso.
 # Parametrizável em tempo real via Configurações → Perfis (web) ou /api/perfis (API).
 PERMISSOES = [

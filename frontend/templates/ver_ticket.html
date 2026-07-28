@@ -117,7 +117,7 @@
       </div>
       <form method="POST" action="{{ url_for('tickets.comentar_ticket', ticket_id=ticket.id) }}"
             enctype="multipart/form-data">
-        <textarea name="comentario" class="form-inp form-textarea" rows="3"
+        <textarea name="comentario" class="form-inp form-textarea" rows="3" maxlength="4000"
                   placeholder="Escreva um comentário ou atualização..."></textarea>
         <div class="mt-2" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:space-between;">
           <label class="btn-anexar-comentario">
@@ -155,7 +155,7 @@
         </div>
         <div class="form-group">
           <label class="form-lbl-sm">Observação (opcional)</label>
-          <textarea name="comentario" class="form-inp-sm" rows="2"
+          <textarea name="comentario" class="form-inp-sm" rows="2" maxlength="3900"
                     placeholder="Motivo da atualização..."></textarea>
         </div>
         <button type="submit" class="btn-submit w-100">

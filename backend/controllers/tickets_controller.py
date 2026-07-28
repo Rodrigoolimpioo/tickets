@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 
 from core import storage
 from core.audit import log_evento
-from core.config import STATUS_LIST, UPLOADS_DIR
+from core.config import HISTORICO_ACAO_MAX, STATUS_LIST, UPLOADS_DIR
 from core.security import login_required, permission_required, role_required
 from core.services import whatsapp_service
 from core.time_utils import get_brasilia_time
@@ -124,6 +124,7 @@ def atualizar_ticket(ticket_id):
         entrada = f'Status alterado para "{novo_status}"'
         if comentario:
             entrada += f' — {comentario}'
+        entrada = entrada[:HISTORICO_ACAO_MAX]
         ticket['historico'].append({'acao': entrada, 'por': session['name'],
                                     'data': now.strftime('%d/%m/%Y %H:%M:%S')})
         storage.save_tickets(tickets)
@@ -176,7 +177,8 @@ def comentar_ticket(ticket_id):
 
     if comentario or arquivo_info:
         now = get_brasilia_time()
-        entrada = {'acao': f'Comentário: {comentario}' if comentario else 'Foto anexada',
+        acao = f'Comentário: {comentario}' if comentario else 'Foto anexada'
+        entrada = {'acao': acao[:HISTORICO_ACAO_MAX],
                    'por': session['name'],
                    'data': now.strftime('%d/%m/%Y %H:%M:%S')}
         if arquivo_info:
