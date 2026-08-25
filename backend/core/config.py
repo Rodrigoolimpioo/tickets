@@ -99,7 +99,10 @@ APP_BASE_URL = os.environ.get('APP_BASE_URL', 'http://localhost:5000')
 
 RESET_TOKEN_EXP_MINUTES = int(os.environ.get('RESET_TOKEN_EXP_MINUTES', '30'))
 
-# ── WhatsApp (notificação de andamento de ticket via Z-API) ──────────
-ZAPI_INSTANCE_ID = os.environ.get('ZAPI_INSTANCE_ID')
-ZAPI_TOKEN = os.environ.get('ZAPI_TOKEN')
-ZAPI_CLIENT_TOKEN = os.environ.get('ZAPI_CLIENT_TOKEN')
+# ── WhatsApp (notificação de andamento de ticket via wa-service) ─────
+# Serviço interno próprio (whatsapp-web.js), repositório separado
+# (github.com/JuanDiniz/wa-service). Roda na mesma VM, escutando só em
+# 127.0.0.1 — nunca é exposto à internet. Substituiu o Z-API (trial
+# expirado, inviável pago pro volume de mensagens do projeto).
+WA_SERVICE_URL = os.environ.get('WA_SERVICE_URL', 'http://127.0.0.1:3000')
+WA_SERVICE_API_KEY = os.environ.get('WA_SERVICE_API_KEY')
