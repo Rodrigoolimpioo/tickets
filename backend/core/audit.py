@@ -18,6 +18,10 @@ ACOES = [
     'config_whatsapp_ativado', 'config_whatsapp_desativado',
     'config_whatsapp_status_atualizado',
     'whatsapp_enviado', 'whatsapp_falhou',
+    'config_unidade_adicionada', 'config_unidade_removida',
+    'equipamento_criado', 'equipamento_ativado', 'equipamento_desativado', 'equipamento_excluido',
+    'manutencao_criada', 'manutencao_atualizada', 'manutencao_comentada',
+    'manutencao_assinatura_registrada', 'manutencao_excluida',
 ]
 
 

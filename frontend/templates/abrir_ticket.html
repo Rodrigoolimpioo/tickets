@@ -47,6 +47,21 @@
           </select>
         </div>
 
+        <!-- UNIDADE -->
+        {% if unidades %}
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-store"></i> Unidade <span class="opcional">— opcional</span>
+          </label>
+          <select name="unidade" class="form-inp form-sel">
+            <option value="">— Selecione a unidade —</option>
+            {% for u in unidades %}
+            <option value="{{ u }}">{{ u }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
         <!-- OCORRÊNCIA -->
         <div class="form-group">
           <label class="form-lbl">

@@ -23,6 +23,7 @@ def abrir_ticket():
         nome       = request.form.get('nome', '').strip()
         ocorrencia = request.form.get('ocorrencia', '').strip()
         sistema    = request.form.get('sistema', '')
+        unidade    = request.form.get('unidade', '') or None
 
         if not nome or not ocorrencia or not sistema:
             error = 'Preencha todos os campos obrigatórios.'
@@ -50,6 +51,7 @@ def abrir_ticket():
                     'nome': nome,
                     'ocorrencia': ocorrencia,
                     'sistema': sistema,
+                    'unidade': unidade,
                     'arquivo': arquivo_info,
                     'data_criacao': now.strftime('%Y-%m-%dT%H:%M:%S'),
                     'data_formatada': now.strftime('%d/%m/%Y %H:%M:%S'),
@@ -67,7 +69,8 @@ def abrir_ticket():
                 whatsapp_service.notificar_ticket_aberto(ticket)
                 return redirect(url_for('tickets.ver_ticket', ticket_id=ticket['id']))
 
-    return render_template('abrir_ticket.html', sistemas=storage.get_sistemas(), error=error)
+    return render_template('abrir_ticket.html', sistemas=storage.get_sistemas(),
+                           unidades=storage.get_unidades(), error=error)
 
 
 @tickets_bp.route('/acompanhamento')
@@ -80,10 +83,12 @@ def acompanhamento():
 
     filtro_status  = request.args.get('status', '')
     filtro_sistema = request.args.get('sistema', '')
+    filtro_unidade = request.args.get('unidade', '')
     busca          = request.args.get('busca', '').strip().lower()
 
     if filtro_status:  tickets = [t for t in tickets if t['status'] == filtro_status]
     if filtro_sistema: tickets = [t for t in tickets if t.get('sistema') == filtro_sistema]
+    if filtro_unidade: tickets = [t for t in tickets if t.get('unidade') == filtro_unidade]
     if busca:          tickets = [t for t in tickets if
                                   busca in t.get('nome', '').lower() or
                                   busca in t.get('numero', '').lower() or
@@ -91,8 +96,9 @@ def acompanhamento():
 
     tickets = sorted(tickets, key=lambda x: x.get('data_criacao', ''), reverse=True)
     return render_template('acompanhamento.html', tickets=tickets,
-                           sistemas=storage.get_sistemas(), status_list=STATUS_LIST,
-                           filtro_status=filtro_status, filtro_sistema=filtro_sistema, busca=busca)
+                           sistemas=storage.get_sistemas(), unidades=storage.get_unidades(),
+                           status_list=STATUS_LIST, filtro_status=filtro_status,
+                           filtro_sistema=filtro_sistema, filtro_unidade=filtro_unidade, busca=busca)
 
 
 @tickets_bp.route('/ticket/<ticket_id>')

@@ -134,8 +134,10 @@ def get_user_permissoes(user: dict) -> list:
     # Último recurso: permissões mínimas hardcoded (só alcançado se o perfil padrão foi excluído)
     role = user.get('role', 'funcionario')
     if role == 'supervisor':
-        return ['dashboard', 'acompanhamento', 'ver_ticket', 'atualizar_ticket', 'comentar_ticket', 'meu_perfil']
-    return ['dashboard', 'abrir_ticket', 'acompanhamento', 'ver_ticket', 'comentar_ticket', 'meu_perfil']
+        return ['dashboard', 'acompanhamento', 'ver_ticket', 'atualizar_ticket', 'comentar_ticket',
+                'manutencao_ver', 'manutencao_gerenciar', 'relatorios_ver', 'meu_perfil']
+    return ['dashboard', 'abrir_ticket', 'acompanhamento', 'ver_ticket', 'comentar_ticket',
+            'manutencao_ver', 'relatorios_ver', 'meu_perfil']
 
 
 # ─────────────────────────────────────────

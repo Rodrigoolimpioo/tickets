@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}{{ manutencao.numero }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <h2 class="page-title mb-0">
+        <i class="fa-solid fa-screwdriver-wrench"></i> {{ manutencao.numero }}
+      </h2>
+      <span class="badge-status badge-{{ manutencao.status | lower | replace(' ', '-') }}" style="font-size:14px; padding:6px 14px;">
+        {{ manutencao.status }}
+      </span>
+    </div>
+    <p class="page-subtitle mt-1">{{ equipamento.nome if equipamento else 'Equipamento removido' }}</p>
+  </div>
+  <a href="{{ url_for('manutencao.manutencoes') }}" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Voltar
+  </a>
+</div>
+
+<div class="row g-3">
+  <!-- COLUNA PRINCIPAL -->
+  <div class="col-lg-8">
+
+    <!-- DETALHES -->
+    <div class="card-panel mb-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-file-lines"></i> Detalhes da Manutenção</h5>
+      </div>
+      <div class="ticket-detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Número</span>
+          <span class="detail-value ticket-num">{{ manutencao.numero }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Equipamento</span>
+          <span class="detail-value">{{ equipamento.nome if equipamento else '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Unidade</span>
+          <span class="detail-value">{{ manutencao.unidade }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Responsável</span>
+          <span class="detail-value">{{ manutencao.responsavel_nome or '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Aberto por</span>
+          <span class="detail-value">{{ manutencao.criado_por }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Data/Hora de Abertura</span>
+          <span class="detail-value">{{ manutencao.data_formatada }} <small class="text-muted">(Horário de Brasília)</small></span>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <span class="detail-label">Descrição</span>
+        <div class="ocorrencia-box">{{ manutencao.descricao }}</div>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="card-panel mb-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-clock-rotate-left"></i> Histórico</h5>
+      </div>
+      <div class="timeline">
+        {% for h in manutencao.historico | reverse %}
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-acao">{{ h.acao }}</div>
+            {% if h.get('arquivo') %}
+            <a href="{{ url_for('misc.uploaded_file', filename=h.arquivo.filename) }}" target="_blank">
+              <img src="{{ url_for('misc.uploaded_file', filename=h.arquivo.filename) }}"
+                   class="timeline-img" alt="{{ h.arquivo.original_name }}" />
+            </a>
+            {% endif %}
+            <div class="timeline-meta">
+              <i class="fa-solid fa-user"></i> {{ h.por }}
+              &nbsp;·&nbsp;
+              <i class="fa-solid fa-clock"></i> {{ h.data }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- OBSERVAÇÃO / ANEXO -->
+    {% if session.role == 'admin' or 'manutencao_gerenciar' in g_permissoes %}
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-comment"></i> Adicionar Observação</h5>
+      </div>
+      <form method="POST" action="{{ url_for('manutencao.comentar_manutencao', manutencao_id=manutencao.id) }}"
+            enctype="multipart/form-data">
+        <textarea name="comentario" class="form-inp form-textarea" rows="3" maxlength="4000"
+                  placeholder="Escreva uma observação sobre o andamento..."></textarea>
+        <div class="mt-2" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:space-between;">
+          <label class="btn-anexar-comentario">
+            <i class="fa-solid fa-image"></i> Anexar foto
+            <input type="file" name="arquivo" accept="image/*" style="display:none"
+                   onchange="mostrarNomeArquivo(this)" />
+          </label>
+          <span id="nomeArquivoComentario" style="font-size:12px; color:#64748b; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+          <button type="submit" class="btn-submit">
+            <i class="fa-solid fa-paper-plane"></i> Enviar
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- COLUNA LATERAL -->
+  <div class="col-lg-4">
+
+    <!-- ATUALIZAR STATUS -->
+    {% if session.role == 'admin' or 'manutencao_gerenciar' in g_permissoes %}
+    <div class="card-panel mb-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-pen-to-square"></i> Atualizar Status</h5>
+      </div>
+      <form method="POST" action="{{ url_for('manutencao.atualizar_manutencao', manutencao_id=manutencao.id) }}">
+        <div class="form-group">
+          <label class="form-lbl-sm">Novo Status</label>
+          <select name="status" class="form-inp-sm form-sel-sm w-100" required>
+            {% for s in status_list %}
+            <option value="{{ s }}" {{ 'selected' if manutencao.status == s }}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl-sm">Observação (opcional)</label>
+          <textarea name="comentario" class="form-inp-sm" rows="2" maxlength="3900"
+                    placeholder="Motivo da atualização..."></textarea>
+        </div>
+        <button type="submit" class="btn-submit w-100">
+          <i class="fa-solid fa-check"></i> Atualizar
+        </button>
+      </form>
+    </div>
+
+    <!-- ASSINATURA DO PRESTADOR -->
+    <div class="card-panel mb-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-signature"></i> Assinatura do Prestador</h5>
+      </div>
+      {% if manutencao.assinatura_filename %}
+      <div class="anexo-box">
+        <img src="{{ url_for('misc.uploaded_file', filename=manutencao.assinatura_filename) }}"
+             class="anexo-media" alt="Assinatura do prestador de serviço"
+             style="background:#fff; border:1px solid var(--border);" />
+      </div>
+      <p class="text-muted small mt-2 mb-0">Assinatura já registrada.</p>
+      {% else %}
+      <p class="text-muted small">Peça ao prestador de serviço para assinar na tela abaixo.</p>
+      <div class="signature-wrap">
+        <canvas id="signatureCanvas" width="300" height="150"></canvas>
+      </div>
+      <div class="mt-2" style="display:flex; gap:8px;">
+        <button type="button" id="btnLimparAssinatura" class="btn-cancel" style="flex:1;">
+          <i class="fa-solid fa-eraser"></i> Limpar
+        </button>
+        <button type="button" id="btnSalvarAssinatura" class="btn-submit" style="flex:1;">
+          <i class="fa-solid fa-check"></i> Confirmar
+        </button>
+      </div>
+      <form method="POST" action="{{ url_for('manutencao.assinar_manutencao', manutencao_id=manutencao.id) }}"
+            id="formAssinatura">
+        <input type="hidden" name="assinatura_png" id="assinaturaPng" />
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- RESUMO -->
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-circle-info"></i> Resumo</h5>
+      </div>
+      <div class="resumo-list">
+        <div class="resumo-item">
+          <span class="resumo-label">Status atual</span>
+          <span class="badge-status badge-{{ manutencao.status | lower | replace(' ', '-') }}">{{ manutencao.status }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Unidade</span>
+          <span class="resumo-value">{{ manutencao.unidade }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Aberto em</span>
+          <span class="resumo-value">{{ manutencao.data_formatada }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Responsável</span>
+          <span class="resumo-value">{{ manutencao.responsavel_nome or '—' }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Atualizações</span>
+          <span class="resumo-value">{{ manutencao.historico | length }}</span>
+        </div>
+        <div class="resumo-item">
+          <span class="resumo-label">Assinatura</span>
+          <span class="resumo-value">{{ 'Sim' if manutencao.assinatura_filename else 'Não' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function mostrarNomeArquivo(input) {
+  const span = document.getElementById('nomeArquivoComentario');
+  span.textContent = input.files.length ? input.files[0].name : '';
+}
+
+{% if not manutencao.assinatura_filename %}
+(function() {
+  const canvas = document.getElementById('signatureCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  let desenhando = false;
+  let assinou = false;
+
+  function pos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const ponto = e.touches ? e.touches[0] : e;
+    return { x: (ponto.clientX - rect.left) * scaleX, y: (ponto.clientY - rect.top) * scaleY };
+  }
+
+  function iniciar(e) {
+    e.preventDefault();
+    desenhando = true;
+    assinou = true;
+    const p = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  }
+
+  function desenhar(e) {
+    if (!desenhando) return;
+    e.preventDefault();
+    const p = pos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  }
+
+  function parar() { desenhando = false; }
+
+  canvas.addEventListener('mousedown', iniciar);
+  canvas.addEventListener('mousemove', desenhar);
+  canvas.addEventListener('mouseup', parar);
+  canvas.addEventListener('mouseleave', parar);
+  canvas.addEventListener('touchstart', iniciar);
+  canvas.addEventListener('touchmove', desenhar);
+  canvas.addEventListener('touchend', parar);
+
+  document.getElementById('btnLimparAssinatura').addEventListener('click', () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    assinou = false;
+  });
+
+  document.getElementById('btnSalvarAssinatura').addEventListener('click', () => {
+    if (!assinou) {
+      alert('Peça ao prestador de serviço para assinar antes de confirmar.');
+      return;
+    }
+    document.getElementById('assinaturaPng').value = canvas.toDataURL('image/png');
+    document.getElementById('formAssinatura').submit();
+  });
+})();
+{% endif %}
+</script>
+{% endblock %}

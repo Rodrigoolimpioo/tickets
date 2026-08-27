@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Nova Manutenção{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="page-title"><i class="fa-solid fa-screwdriver-wrench"></i> Nova Manutenção</h2>
+  <p class="page-subtitle">Registre uma manutenção de equipamento</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card-panel">
+
+      {% if error %}
+      <div class="alert-msg alert-error mb-4">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+      </div>
+      {% endif %}
+
+      {% if not equipamentos %}
+      <div class="alert-msg alert-error mb-4">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Nenhum equipamento cadastrado. Cadastre um equipamento em
+        <a href="{{ url_for('config.configuracoes') }}">Configurações</a> antes de abrir uma manutenção.
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('manutencao.nova_manutencao') }}" id="formManutencao">
+
+        <!-- EQUIPAMENTO -->
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-kitchen-set"></i> Equipamento <span class="req">*</span>
+          </label>
+          <select name="equipamento_id" id="equipamentoSelect" class="form-inp form-sel" required>
+            <option value="">— Selecione o equipamento —</option>
+            {% for e in equipamentos %}
+            <option value="{{ e.id }}" data-unidade="{{ e.unidade }}">
+              {{ e.nome }}{% if e.numero_serie %} — Nº série {{ e.numero_serie }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <div class="form-hint" id="unidadeHint" style="display:none;">
+            <i class="fa-solid fa-store"></i> Unidade: <strong id="unidadeHintNome"></strong>
+          </div>
+        </div>
+
+        <!-- RESPONSÁVEL -->
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-user"></i> Responsável <span class="opcional">— opcional</span>
+          </label>
+          <select name="responsavel_id" class="form-inp form-sel">
+            <option value="">— Selecione o responsável —</option>
+            {% for u in usuarios %}
+            <option value="{{ u.id }}">{{ u.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- DESCRIÇÃO -->
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-file-lines"></i> Descrição <span class="req">*</span>
+          </label>
+          <textarea
+            name="descricao"
+            class="form-inp form-textarea"
+            placeholder="Descreva o serviço de manutenção a ser realizado..."
+            rows="5"
+            maxlength="2000"
+            required
+          ></textarea>
+          <div class="char-count"><span id="charCount">0</span>/2000</div>
+        </div>
+
+        <!-- INFO AUTOMÁTICA -->
+        <div class="info-box">
+          <i class="fa-solid fa-circle-info"></i>
+          <div>
+            <strong>Informações automáticas:</strong> O número da manutenção, a unidade (a partir do equipamento
+            selecionado), a data/hora de abertura (horário de Brasília) e o responsável pela abertura serão
+            registrados automaticamente.
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a href="{{ url_for('manutencao.manutencoes') }}" class="btn-cancel">
+            <i class="fa-solid fa-xmark"></i> Cancelar
+          </a>
+          <button type="submit" class="btn-submit" id="btnSubmit" {{ 'disabled' if not equipamentos }}>
+            <i class="fa-solid fa-paper-plane"></i> Abrir Manutenção
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Contador de caracteres
+  const textarea = document.querySelector('[name="descricao"]');
+  const counter = document.getElementById('charCount');
+  textarea.addEventListener('input', () => {
+    counter.textContent = textarea.value.length;
+  });
+
+  // Mostra a unidade do equipamento selecionado
+  const equipamentoSelect = document.getElementById('equipamentoSelect');
+  const unidadeHint = document.getElementById('unidadeHint');
+  const unidadeHintNome = document.getElementById('unidadeHintNome');
+  equipamentoSelect.addEventListener('change', () => {
+    const opt = equipamentoSelect.options[equipamentoSelect.selectedIndex];
+    const unidade = opt ? opt.getAttribute('data-unidade') : '';
+    if (unidade) {
+      unidadeHintNome.textContent = unidade;
+      unidadeHint.style.display = 'flex';
+    } else {
+      unidadeHint.style.display = 'none';
+    }
+  });
+
+  // Submissão com loading
+  document.getElementById('formManutencao').addEventListener('submit', function() {
+    const btn = document.getElementById('btnSubmit');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+    btn.disabled = true;
+  });
+</script>
+{% endblock %}

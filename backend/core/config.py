@@ -46,6 +46,7 @@ LOGO_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 MAX_CONTENT_LENGTH = 100 * 1024 * 1024
 
 STATUS_LIST = ['Aberto', 'Em Andamento', 'Resolvido', 'Incubado']
+STATUS_LIST_MANUTENCAO = ['Aberta', 'Em Andamento', 'Concluída', 'Cancelada']
 ROLES_VALIDOS = {'admin', 'supervisor', 'funcionario'}
 HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
 TIME_RE = re.compile(r'^(?:[01]\d|2[0-3]):[0-5]\d$')
@@ -65,6 +66,9 @@ PERMISSOES = [
     ('ver_ticket',       'Visualizar Detalhes do Ticket',  'fa-eye'),
     ('atualizar_ticket', 'Atualizar Status do Ticket',     'fa-pen-to-square'),
     ('comentar_ticket',  'Comentar em Tickets',            'fa-comment'),
+    ('manutencao_ver',        'Visualizar Manutenções',    'fa-screwdriver-wrench'),
+    ('manutencao_gerenciar',  'Gerenciar Manutenções',      'fa-toolbox'),
+    ('relatorios_ver',        'Relatórios',                 'fa-chart-column'),
     ('meu_perfil',       'Meu Perfil',                     'fa-user'),
 ]
 PERMISSOES_IDS = [p[0] for p in PERMISSOES]
@@ -98,6 +102,50 @@ SMTP_FROM = os.environ.get('SMTP_FROM') or SMTP_USER
 APP_BASE_URL = os.environ.get('APP_BASE_URL', 'http://localhost:5000')
 
 RESET_TOKEN_EXP_MINUTES = int(os.environ.get('RESET_TOKEN_EXP_MINUTES', '30'))
+
+# ── Manutenção de equipamentos ────────────────────────────────────────
+# Taxonomia fornecida pelo cliente, semeada uma vez em EQUIPAMENTO_TIPOS
+# (ver db/migrate.py). Sem tela de CRUD na v1 — só alimenta o <select> ao
+# cadastrar um equipamento em Configurações → Equipamentos.
+EQUIPAMENTO_TIPOS_PADRAO = {
+    'Cocção e preparo': [
+        'Fogão industrial', 'Forno industrial', 'Forno combinado', 'Forno de convecção',
+        'Forno elétrico', 'Forno SpeedOver', 'Fritadeira elétrica', 'Fritadeira a gás',
+        'Coifa', 'Exaustor', 'Micro-ondas', 'Panela de pressão industrial',
+        'Caldeirão industrial', 'Máquina de cozinhar massas',
+    ],
+    'Refrigeração e congelamento': [
+        'Câmara fria', 'Câmara de congelamento', 'Geladeira industrial',
+        'Refrigerador vertical', 'Freezer horizontal', 'Freezer vertical',
+        'Balcão refrigerado', 'Mesa refrigerada', 'Expositor refrigerado',
+        'Máquina de gelo', 'Unidade condensadora', 'Evaporador',
+    ],
+    'Processamento de alimentos': [
+        'Processador de alimentos', 'Multiprocessador industrial', 'Cutter',
+        'Liquidificador industrial', 'Mixer industrial', 'Batedeira planetária',
+        'Masseira', 'Cilindro de massas', 'Modeladora', 'Fatiador de frios',
+        'Moedor de carne', 'Serra-fita', 'Amaciador de carne',
+        'Descascador de legumes', 'Cortador de legumes', 'Espremedor de frutas',
+    ],
+    'Conservação e embalagem': [
+        'Seladora', 'Seladora a vácuo', 'Máquina de embalagem a vácuo',
+        'Termoformadora', 'Embaladora', 'Datador', 'Etiquetadora', 'Balança',
+        'Balança de precisão', 'Balança de plataforma',
+    ],
+    'Lavagem e higienização': [
+        'Máquina de lavar louças', 'Lava-louças industrial', 'Pia industrial',
+        'Lavadora de utensílios', 'Esterilizador', 'Dosador de produtos químicos',
+    ],
+    'Apoio e armazenamento': [
+        'Bancada de inox', 'Mesa de inox', 'Prateleira', 'Estante',
+        'Carrinho de transporte', 'Carro plataforma', 'Carro térmico',
+        'Caixa térmica', 'Armário de inox',
+    ],
+    'Equipamentos elétricos e infraestrutura': [
+        'Ar-condicionado', 'Climatizador', 'Ventilador industrial', 'Compressor',
+        "Bomba d'água", 'Gerador', 'Nobreak', 'Quadro elétrico',
+    ],
+}
 
 # ── WhatsApp (notificação de andamento de ticket via wa-service) ─────
 # Serviço interno próprio (whatsapp-web.js), repositório separado

@@ -69,6 +69,20 @@
         </a>
       </li>
       {% endif %}
+      {% if session.role == 'admin' or 'manutencao_ver' in g_permissoes %}
+      <li>
+        <a href="{{ url_for('manutencao.manutencoes') }}" class="{{ 'active' if request.endpoint in ['manutencao.manutencoes', 'manutencao.ver_manutencao'] else '' }}">
+          <i class="fa-solid fa-screwdriver-wrench"></i> Manutenção
+        </a>
+      </li>
+      {% endif %}
+      {% if session.role == 'admin' or 'relatorios_ver' in g_permissoes %}
+      <li>
+        <a href="{{ url_for('relatorios.relatorios') }}" class="{{ 'active' if request.endpoint == 'relatorios.relatorios' else '' }}">
+          <i class="fa-solid fa-chart-column"></i> Relatórios
+        </a>
+      </li>
+      {% endif %}
       {% if session.role == 'admin' %}
       <li class="menu-section">Administração</li>
       <li>

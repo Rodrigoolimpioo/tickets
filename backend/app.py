@@ -20,6 +20,8 @@ from controllers.usuarios_controller import usuarios_bp
 from controllers.perfis_controller import perfis_bp
 from controllers.misc_controller import misc_bp
 from controllers.api_controller import api_bp
+from controllers.manutencao_controller import manutencao_bp
+from controllers.relatorios_controller import relatorios_bp
 
 app = Flask(
     __name__,
@@ -55,6 +57,8 @@ app.register_blueprint(usuarios_bp)
 app.register_blueprint(perfis_bp)
 app.register_blueprint(misc_bp)
 app.register_blueprint(api_bp)
+app.register_blueprint(manutencao_bp)
+app.register_blueprint(relatorios_bp)
 
 
 app.jinja_env.globals['get_role_label'] = get_role_label

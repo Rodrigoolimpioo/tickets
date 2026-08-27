@@ -30,6 +30,9 @@ def get_config() -> dict:
         cursor.execute("SELECT NOME FROM SISTEMAS ORDER BY NOME")
         sistemas = [r['nome'] for r in rows_to_dicts(cursor)]
 
+        cursor.execute("SELECT NOME FROM UNIDADES ORDER BY NOME")
+        unidades = [r['nome'] for r in rows_to_dicts(cursor)]
+
         cursor.execute("SELECT STATUS, ATIVO, MENSAGEM FROM WHATSAPP_STATUS_CONFIG")
         wpp_rows = rows_to_dicts(cursor)
         status_ativo = {r['status']: bool(r['ativo']) for r in wpp_rows}
@@ -40,6 +43,7 @@ def get_config() -> dict:
         'ip_control': {'enabled': bool(g['ip_control_enabled']), 'ips': ips},
         'horario_control': {'enabled': bool(g['horario_control_enabled']), 'horarios': horarios},
         'sistemas': sistemas,
+        'unidades': unidades,
         'personalizacao': {
             'cor_botao': g['cor_botao'],
             'cor_botao_light': g['cor_botao_light'],
@@ -139,5 +143,11 @@ def save_config(cfg: dict) -> None:
     with get_cursor(commit=True) as cursor:
         for sistema in cfg['sistemas']:
             cursor.execute("INSERT INTO SISTEMAS (NOME) VALUES (:nome)", nome=sistema)
+
+    with get_cursor(commit=True) as cursor:
+        cursor.execute("DELETE FROM UNIDADES")
+    with get_cursor(commit=True) as cursor:
+        for unidade in cfg.get('unidades', []):
+            cursor.execute("INSERT INTO UNIDADES (NOME) VALUES (:nome)", nome=unidade)
 
     perfis_repository.save_perfis(cfg.get('perfis', []))

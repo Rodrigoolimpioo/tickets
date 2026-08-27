@@ -52,6 +52,14 @@
      class="cfg-tab {{ 'cfg-tab-active' if tab == 'sistemas' else '' }}">
     <i class="fa-solid fa-layer-group"></i> Sistemas
   </a>
+  <a href="{{ url_for('config.configuracoes', tab='unidades') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'unidades' else '' }}">
+    <i class="fa-solid fa-store"></i> Unidades
+  </a>
+  <a href="{{ url_for('config.configuracoes', tab='equipamentos') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'equipamentos' else '' }}">
+    <i class="fa-solid fa-kitchen-set"></i> Equipamentos
+  </a>
   <a href="{{ url_for('config.configuracoes', tab='personalizacao') }}"
      class="cfg-tab {{ 'cfg-tab-active' if tab == 'personalizacao' else '' }}">
     <i class="fa-solid fa-palette"></i> Personalização
@@ -97,6 +105,14 @@
 <div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Usuário excluído com sucesso!</div>
 {% elif msg == 'whatsapp_status_salvo' %}
 <div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Status disparadores salvos com sucesso!</div>
+{% elif msg == 'unidade_adicionada' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Unidade adicionada com sucesso!</div>
+{% elif msg == 'unidade_removida' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Unidade removida com sucesso!</div>
+{% elif msg == 'equipamento_criado' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Equipamento cadastrado com sucesso!</div>
+{% elif msg == 'equipamento_excluido' %}
+<div class="alert-msg alert-success mb-3"><i class="fa-solid fa-circle-check"></i> Equipamento excluído com sucesso!</div>
 {% endif %}
 
 {% if err == 'usuario_existe' %}
@@ -602,6 +618,76 @@
         <p class="mt-2"><i class="fa-solid fa-triangle-exclamation" style="color:var(--amber)"></i> &nbsp;Remover um sistema <strong>não afeta tickets já criados</strong> com ele.</p>
         <p class="mt-2"><i class="fa-solid fa-info" style="color:var(--blue)"></i> &nbsp;O filtro de sistemas na página de acompanhamento reflete os sistemas ativos.</p>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════ -->
+<!-- ABA: UNIDADES                        -->
+<!-- ════════════════════════════════════ -->
+{% elif tab == 'unidades' %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card-panel p-0">
+      <div class="card-panel-header" style="padding:16px 20px;">
+        <h5><i class="fa-solid fa-store"></i> Unidades Cadastradas</h5>
+        <span class="badge-status badge-aberto">{{ cfg.unidades | length }} unidade(s)</span>
+      </div>
+      {% if cfg.unidades %}
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nome da Unidade</th>
+              <th style="width:80px">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in cfg.unidades %}
+            <tr>
+              <td><span class="fw-semibold">{{ u }}</span></td>
+              <td>
+                <form method="POST" action="{{ url_for('config.cfg_unidade_remover') }}"
+                      onsubmit="return confirm('Remover a unidade \'{{ u }}\'? Tickets/equipamentos existentes não serão afetados.')">
+                  <input type="hidden" name="nome" value="{{ u }}" />
+                  <button type="submit" class="btn-acao btn-danger-sm" title="Remover unidade">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:24px">
+        <i class="fa-solid fa-store" style="font-size:28px"></i>
+        <p style="font-size:14px">Nenhuma unidade cadastrada</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-plus-circle"></i> Adicionar Unidade</h5>
+      </div>
+      <form method="POST" action="{{ url_for('config.cfg_unidade_adicionar') }}">
+        <div class="form-group">
+          <label class="form-lbl">Nome da unidade <span class="req">*</span></label>
+          <input type="text" name="nome" class="form-inp"
+                 placeholder="Ex.: Loja Centro" required maxlength="60" />
+          <small class="text-muted" style="font-size:12px">
+            Aparece nos filtros de Tickets, Equipamentos, Manutenções e Relatórios.
+          </small>
+        </div>
+        <button type="submit" class="btn-submit w-100">
+          <i class="fa-solid fa-plus"></i> Adicionar Unidade
+        </button>
+      </form>
     </div>
   </div>
 </div>
@@ -1341,5 +1427,149 @@ function abrirModalEditarPerfil(btn) {
     </div>
   </div>
 </div>
+{% endif %}
+
+
+<!-- ════════════════════════════════════ -->
+<!-- ABA: EQUIPAMENTOS                     -->
+<!-- ════════════════════════════════════ -->
+{% if tab == 'equipamentos' %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card-panel p-0">
+      <div class="card-panel-header" style="padding:16px 20px;">
+        <h5><i class="fa-solid fa-kitchen-set"></i> Equipamentos Cadastrados</h5>
+        <span class="badge-status badge-aberto">{{ equipamentos | length }} equipamento(s)</span>
+      </div>
+      {% if equipamentos %}
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th>Unidade</th>
+              <th>Status</th>
+              <th style="width:110px">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in equipamentos %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ e.nome }}</div>
+                {% if e.numero_serie %}<code class="code-tag">{{ e.numero_serie }}</code>{% endif %}
+              </td>
+              <td>
+                {{ e.tipo or '—' }}
+                {% if e.categoria %}<br><small class="text-muted">{{ e.categoria }}</small>{% endif %}
+              </td>
+              <td>{{ e.unidade }}</td>
+              <td>
+                {% if e.ativo %}
+                <span class="badge-status badge-resolvido">Ativo</span>
+                {% else %}
+                <span class="badge-status badge-fechado">Inativo</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="action-btns">
+                  <form method="POST" action="{{ url_for('config.cfg_equipamento_toggle', equipamento_id=e.id) }}" style="display:inline">
+                    <button type="submit" class="btn-acao {{ 'btn-danger-sm' if e.ativo else 'btn-success-sm' }}"
+                            title="{{ 'Desativar' if e.ativo else 'Ativar' }}">
+                      <i class="fa-solid fa-{{ 'ban' if e.ativo else 'check' }}"></i>
+                    </button>
+                  </form>
+                  <form method="POST" action="{{ url_for('config.cfg_equipamento_excluir', equipamento_id=e.id) }}"
+                        style="display:inline" onsubmit="return confirm('Excluir o equipamento \'{{ e.nome }}\'? O histórico de manutenções vinculado a ele permanece.')">
+                    <button type="submit" class="btn-acao btn-acao-danger" title="Excluir equipamento">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:24px">
+        <i class="fa-solid fa-kitchen-set" style="font-size:28px"></i>
+        <p style="font-size:14px">Nenhum equipamento cadastrado</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-plus-circle"></i> Cadastrar Equipamento</h5>
+      </div>
+      <form method="POST" action="{{ url_for('config.cfg_equipamento_criar') }}">
+        <div class="form-group">
+          <label class="form-lbl">Nome/Identificação <span class="req">*</span></label>
+          <input type="text" name="nome" class="form-inp"
+                 placeholder="Ex.: Forno industrial 1" required maxlength="150" />
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Categoria</label>
+          <select name="categoria" class="form-inp form-sel" id="selectCategoria" onchange="atualizarTiposEquipamento()">
+            <option value="">— Selecione —</option>
+            {% for categoria in equipamento_tipos.keys() %}
+            <option value="{{ categoria }}">{{ categoria }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Tipo</label>
+          <select name="tipo" class="form-inp form-sel" id="selectTipo">
+            <option value="">— Selecione a categoria primeiro —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Unidade <span class="req">*</span></label>
+          <select name="unidade" class="form-inp form-sel" required>
+            <option value="">— Selecione —</option>
+            {% for u in cfg.unidades %}
+            <option value="{{ u }}">{{ u }}</option>
+            {% endfor %}
+          </select>
+          {% if not cfg.unidades %}
+          <small class="text-muted" style="font-size:12px">
+            Nenhuma unidade cadastrada ainda — crie uma na aba <strong>Unidades</strong>.
+          </small>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Número de série</label>
+          <input type="text" name="numero_serie" class="form-inp" placeholder="Opcional" maxlength="100" />
+        </div>
+        <button type="submit" class="btn-submit w-100">
+          <i class="fa-solid fa-plus"></i> Cadastrar Equipamento
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const EQUIPAMENTO_TIPOS = {{ equipamento_tipos | tojson }};
+  function atualizarTiposEquipamento() {
+    const categoria = document.getElementById('selectCategoria').value;
+    const selectTipo = document.getElementById('selectTipo');
+    const tipos = EQUIPAMENTO_TIPOS[categoria] || [];
+    selectTipo.innerHTML = tipos.length
+      ? '<option value="">— Selecione —</option>'
+      : '<option value="">— Selecione a categoria primeiro —</option>';
+    tipos.forEach((tipo) => {
+      const opt = document.createElement('option');
+      opt.value = tipo;
+      opt.textContent = tipo;
+      selectTipo.appendChild(opt);
+    });
+  }
+</script>
 {% endif %}
 {% endblock %}

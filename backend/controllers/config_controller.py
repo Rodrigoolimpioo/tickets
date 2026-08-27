@@ -33,6 +33,10 @@ def configuracoes():
     perfis      = cfg.get('perfis', [])
     perfis_dict = {p['id']: p for p in perfis}
 
+    equipamentos = []
+    if tab == 'equipamentos':
+        equipamentos = storage.load_equipamentos()
+
     logs = []
     filtro_acao = filtro_usuario = busca_logs = ''
     if tab == 'logs':
@@ -48,7 +52,8 @@ def configuracoes():
                            perfis=perfis, perfis_dict=perfis_dict,
                            logs=logs, acoes_log=ACOES,
                            filtro_acao=filtro_acao, filtro_usuario=filtro_usuario, busca_logs=busca_logs,
-                           status_list=STATUS_LIST)
+                           status_list=STATUS_LIST,
+                           equipamentos=equipamentos, equipamento_tipos=storage.get_equipamento_tipos())
 
 
 @config_bp.route('/admin')
@@ -161,6 +166,88 @@ def cfg_sistema_remover():
         storage.save_config(cfg)
         log_evento('config_sistema_removido', detalhes=nome)
     return redirect(url_for('config.configuracoes', tab='sistemas', msg='sistema_removido'))
+
+
+# ── Unidades ──────────────────────────────
+
+@config_bp.route('/configuracoes/unidade/adicionar', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_unidade_adicionar():
+    cfg = storage.load_config()
+    nome = request.form.get('nome', '').strip()
+    if nome and nome not in cfg['unidades']:
+        cfg['unidades'].append(nome)
+        storage.save_config(cfg)
+        log_evento('config_unidade_adicionada', detalhes=nome)
+    return redirect(url_for('config.configuracoes', tab='unidades', msg='unidade_adicionada'))
+
+
+@config_bp.route('/configuracoes/unidade/remover', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_unidade_remover():
+    cfg = storage.load_config()
+    nome = request.form.get('nome', '').strip()
+    if nome in cfg['unidades']:
+        cfg['unidades'].remove(nome)
+        storage.save_config(cfg)
+        log_evento('config_unidade_removida', detalhes=nome)
+    return redirect(url_for('config.configuracoes', tab='unidades', msg='unidade_removida'))
+
+
+# ── Equipamentos ──────────────────────────
+
+@config_bp.route('/configuracoes/equipamento/criar', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_equipamento_criar():
+    from core.time_utils import get_brasilia_time
+
+    nome = request.form.get('nome', '').strip()
+    unidade = request.form.get('unidade', '').strip()
+    if nome and unidade:
+        now = get_brasilia_time()
+        equipamentos = storage.load_equipamentos()
+        equipamentos.append({
+            'id': str(uuid.uuid4()), 'nome': nome,
+            'categoria': request.form.get('categoria', '').strip() or None,
+            'tipo': request.form.get('tipo', '').strip() or None,
+            'unidade': unidade,
+            'numero_serie': request.form.get('numero_serie', '').strip(),
+            'ativo': True,
+            'data_cadastro': now.strftime('%Y-%m-%dT%H:%M:%S'),
+        })
+        storage.save_equipamentos(equipamentos)
+        log_evento('equipamento_criado', detalhes=f'{nome} — {unidade}')
+    return redirect(url_for('config.configuracoes', tab='equipamentos', msg='equipamento_criado'))
+
+
+@config_bp.route('/configuracoes/equipamento/<equipamento_id>/toggle', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_equipamento_toggle(equipamento_id):
+    equipamentos = storage.load_equipamentos()
+    equipamento = next((e for e in equipamentos if e['id'] == equipamento_id), None)
+    if equipamento:
+        equipamento['ativo'] = not equipamento.get('ativo', True)
+        storage.save_equipamentos(equipamentos)
+        acao = 'equipamento_ativado' if equipamento['ativo'] else 'equipamento_desativado'
+        log_evento(acao, detalhes=equipamento['nome'])
+    return redirect(url_for('config.configuracoes', tab='equipamentos'))
+
+
+@config_bp.route('/configuracoes/equipamento/<equipamento_id>/excluir', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_equipamento_excluir(equipamento_id):
+    equipamentos = storage.load_equipamentos()
+    equipamento = next((e for e in equipamentos if e['id'] == equipamento_id), None)
+    if equipamento:
+        equipamentos = [e for e in equipamentos if e['id'] != equipamento_id]
+        storage.save_equipamentos(equipamentos)
+        log_evento('equipamento_excluido', detalhes=equipamento['nome'])
+    return redirect(url_for('config.configuracoes', tab='equipamentos', msg='equipamento_excluido'))
 
 
 # ── Personalização ────────────────────────

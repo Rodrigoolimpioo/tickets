@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Manutenção{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title"><i class="fa-solid fa-screwdriver-wrench"></i> Manutenção de Equipamentos</h2>
+    <p class="page-subtitle">{{ manutencoes | length }} manutenção(ões) encontrada(s)</p>
+  </div>
+  {% if session.role == 'admin' or 'manutencao_gerenciar' in g_permissoes %}
+  <a href="{{ url_for('manutencao.nova_manutencao') }}" class="btn-primary-sm">
+    <i class="fa-solid fa-plus"></i> Nova Manutenção
+  </a>
+  {% endif %}
+</div>
+
+<!-- FILTROS -->
+<div class="card-panel mb-3">
+  <form method="GET" action="{{ url_for('manutencao.manutencoes') }}" class="filtros-form">
+    <div class="filtros-row">
+      <div class="filtro-item flex-grow-1">
+        <label class="form-lbl-sm"><i class="fa-solid fa-magnifying-glass"></i> Buscar</label>
+        <input type="text" name="busca" value="{{ busca }}" class="form-inp-sm"
+               placeholder="Nº, descrição ou responsável..." />
+      </div>
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-circle-half-stroke"></i> Status</label>
+        <select name="status" class="form-inp-sm form-sel-sm">
+          <option value="">Todos</option>
+          {% for s in status_list %}
+          <option value="{{ s }}" {{ 'selected' if filtro_status == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-store"></i> Unidade</label>
+        <select name="unidade" class="form-inp-sm form-sel-sm">
+          <option value="">Todas</option>
+          {% for u in unidades %}
+          <option value="{{ u }}" {{ 'selected' if filtro_unidade == u }}>{{ u }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filtro-item align-self-end">
+        <button type="submit" class="btn-filtrar">
+          <i class="fa-solid fa-filter"></i> Filtrar
+        </button>
+        {% if busca or filtro_status or filtro_unidade %}
+        <a href="{{ url_for('manutencao.manutencoes') }}" class="btn-limpar">
+          <i class="fa-solid fa-xmark"></i>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- TABELA -->
+<div class="card-panel p-0">
+  {% if manutencoes %}
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:110px">Nº</th>
+          <th>Equipamento</th>
+          <th style="width:150px">Unidade</th>
+          <th style="width:130px">Status</th>
+          <th style="width:150px">Responsável</th>
+          <th style="width:155px">Data/Hora</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in manutencoes %}
+        <tr onclick="window.location='{{ url_for('manutencao.ver_manutencao', manutencao_id=m.id) }}'" style="cursor:pointer">
+          <td><span class="ticket-num">{{ m.numero }}</span></td>
+          <td>
+            <div class="ticket-nome">{{ m.equipamento_nome }}</div>
+            <div class="ticket-ocorrencia-preview">{{ m.descricao[:80] }}{% if m.descricao | length > 80 %}...{% endif %}</div>
+          </td>
+          <td>{{ m.unidade }}</td>
+          <td>
+            <span class="badge-status badge-{{ m.status | lower | replace(' ', '-') }}">
+              {{ m.status }}
+            </span>
+          </td>
+          <td class="text-muted small">{{ m.responsavel_nome or '—' }}</td>
+          <td class="text-muted small">{{ m.data_formatada }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-screwdriver-wrench"></i>
+    <p>Nenhuma manutenção encontrada</p>
+    {% if session.role == 'admin' or 'manutencao_gerenciar' in g_permissoes %}
+    <a href="{{ url_for('manutencao.nova_manutencao') }}" class="btn-primary-sm">
+      <i class="fa-solid fa-plus"></i> Abrir nova manutenção
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

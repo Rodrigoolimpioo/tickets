@@ -39,6 +39,12 @@
             {{ ticket.sistema }}
           </span>
         </div>
+        {% if ticket.unidade %}
+        <div class="detail-item">
+          <span class="detail-label">Unidade</span>
+          <span class="detail-value">{{ ticket.unidade }}</span>
+        </div>
+        {% endif %}
         <div class="detail-item">
           <span class="detail-label">Aberto por</span>
           <span class="detail-value">{{ ticket.criado_por }}</span>

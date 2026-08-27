@@ -39,6 +39,9 @@ _ALTER_STATEMENTS = [
     # existente) e um MODIFY redundante (já no tamanho novo) não dá erro,
     # então isso não precisa do mesmo tratamento de exceção do ADD COLUMN.
     "ALTER TABLE TICKET_HISTORICO MODIFY (ACAO VARCHAR2(4000 CHAR))",
+    # Módulo de Manutenção de Equipamentos: tickets ganham unidade (loja)
+    # pra bater com o mesmo filtro do relatório de manutenções.
+    "ALTER TABLE TICKETS ADD (UNIDADE VARCHAR2(100))",
 ]
 
 _DDL_STATEMENTS = [
@@ -77,6 +80,7 @@ _DDL_STATEMENTS = [
         NOME                   VARCHAR2(200) NOT NULL,
         OCORRENCIA             VARCHAR2(4000) NOT NULL,
         SISTEMA                VARCHAR2(100) NOT NULL,
+        UNIDADE                VARCHAR2(100),
         ARQUIVO_FILENAME       VARCHAR2(255),
         ARQUIVO_ORIGINAL_NAME  VARCHAR2(255),
         ARQUIVO_TIPO           VARCHAR2(20),
@@ -132,6 +136,53 @@ _DDL_STATEMENTS = [
     )
     """,
     "CREATE TABLE SISTEMAS (NOME VARCHAR2(100) PRIMARY KEY)",
+    "CREATE TABLE UNIDADES (NOME VARCHAR2(100) PRIMARY KEY)",
+    """
+    CREATE TABLE EQUIPAMENTO_TIPOS (
+        CATEGORIA VARCHAR2(100) NOT NULL,
+        NOME      VARCHAR2(150) NOT NULL,
+        CONSTRAINT PK_EQUIPAMENTO_TIPOS PRIMARY KEY (CATEGORIA, NOME)
+    )
+    """,
+    """
+    CREATE TABLE EQUIPAMENTOS (
+        ID            VARCHAR2(36)  PRIMARY KEY,
+        NOME          VARCHAR2(200) NOT NULL,
+        CATEGORIA     VARCHAR2(100),
+        TIPO          VARCHAR2(150),
+        UNIDADE       VARCHAR2(100) NOT NULL,
+        NUMERO_SERIE  VARCHAR2(100),
+        ATIVO         NUMBER(1)     DEFAULT 1 NOT NULL,
+        DATA_CADASTRO TIMESTAMP     NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE MANUTENCOES (
+        ID                  VARCHAR2(36)   PRIMARY KEY,
+        NUMERO              VARCHAR2(20)   NOT NULL UNIQUE,
+        EQUIPAMENTO_ID      VARCHAR2(36)   NOT NULL,
+        UNIDADE             VARCHAR2(100)  NOT NULL,
+        RESPONSAVEL_ID      VARCHAR2(36),
+        RESPONSAVEL_NOME    VARCHAR2(200),
+        DESCRICAO           VARCHAR2(4000 CHAR) NOT NULL,
+        STATUS              VARCHAR2(30)   NOT NULL,
+        DATA_CRIACAO        TIMESTAMP      NOT NULL,
+        CRIADO_POR          VARCHAR2(200)  NOT NULL,
+        CRIADO_POR_ID       VARCHAR2(36)   NOT NULL,
+        ASSINATURA_FILENAME VARCHAR2(255)
+    )
+    """,
+    """
+    CREATE TABLE MANUTENCAO_HISTORICO (
+        ID                    NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        MANUTENCAO_ID         VARCHAR2(36)   NOT NULL REFERENCES MANUTENCOES(ID) ON DELETE CASCADE,
+        ACAO                  VARCHAR2(4000 CHAR) NOT NULL,
+        POR                   VARCHAR2(200)  NOT NULL,
+        DATA                  TIMESTAMP      NOT NULL,
+        ARQUIVO_FILENAME      VARCHAR2(500),
+        ARQUIVO_ORIGINAL_NAME VARCHAR2(500)
+    )
+    """,
     """
     CREATE TABLE LOGS_AUDITORIA (
         ID            NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -201,6 +252,36 @@ def _seed_perfis(cursor):
     logger.info('Perfis padrão semeados.')
 
 
+def _grant_permissoes_manutencao_relatorios(cursor):
+    # PERFIL_PERMISSOES já existia antes de manutencao_ver/manutencao_gerenciar/
+    # relatorios_ver existirem — _seed_perfis só roda com a tabela PERFIS
+    # vazia, então bases já em produção (perfis padrão criados antes desta
+    # feature) nunca ganhariam essas permissões. Insere só se ainda não
+    # existir: idempotente e não mexe em nenhuma outra permissão/perfil.
+    grants = {
+        'perfil-supervisor': ['manutencao_ver', 'manutencao_gerenciar', 'relatorios_ver'],
+        'perfil-funcionario': ['manutencao_ver', 'relatorios_ver'],
+    }
+    for perfil_id, permissoes in grants.items():
+        cursor.execute("SELECT COUNT(*) FROM PERFIS WHERE ID = :id", id=perfil_id)
+        if cursor.fetchone()[0] == 0:
+            continue
+        for permissao in permissoes:
+            cursor.execute(
+                """
+                INSERT INTO PERFIL_PERMISSOES (PERFIL_ID, PERMISSAO)
+                SELECT :perfil_id, :permissao FROM dual
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM PERFIL_PERMISSOES
+                    WHERE PERFIL_ID = :perfil_id2 AND PERMISSAO = :permissao2
+                )
+                """,
+                perfil_id=perfil_id, permissao=permissao,
+                perfil_id2=perfil_id, permissao2=permissao,
+            )
+    logger.info('Permissões de manutenção/relatórios garantidas nos perfis padrão.')
+
+
 def _seed_config(cursor):
     cursor.execute("SELECT COUNT(*) FROM CONFIG_GERAL")
     if cursor.fetchone()[0] > 0:
@@ -241,6 +322,8 @@ def _seed_config(cursor):
         )
     for sistema in defaults['sistemas']:
         cursor.execute("INSERT INTO SISTEMAS (NOME) VALUES (:nome)", nome=sistema)
+    for unidade in defaults['unidades']:
+        cursor.execute("INSERT INTO UNIDADES (NOME) VALUES (:nome)", nome=unidade)
     logger.info('Configuração padrão semeada.')
 
 
@@ -260,6 +343,24 @@ def _seed_whatsapp_status(cursor):
             status=status, ativo=1 if ativo else 0, mensagem=mensagens.get(status) or None,
         )
     logger.info('Configuração de status do WhatsApp semeada.')
+
+
+def _seed_equipamento_tipos(cursor):
+    # À parte de _seed_config pelo mesmo motivo de _seed_whatsapp_status:
+    # tabela nasceu depois, em base já com CONFIG_GERAL populado essa
+    # tabela ficaria vazia pra sempre se dependesse de _seed_config.
+    from core.config import EQUIPAMENTO_TIPOS_PADRAO
+
+    cursor.execute("SELECT COUNT(*) FROM EQUIPAMENTO_TIPOS")
+    if cursor.fetchone()[0] > 0:
+        return
+    for categoria, tipos in EQUIPAMENTO_TIPOS_PADRAO.items():
+        for tipo in tipos:
+            cursor.execute(
+                "INSERT INTO EQUIPAMENTO_TIPOS (CATEGORIA, NOME) VALUES (:categoria, :nome)",
+                categoria=categoria, nome=tipo,
+            )
+    logger.info('Taxonomia de tipos de equipamento semeada.')
 
 
 def _seed_users(cursor):
@@ -293,8 +394,10 @@ def run():
         _create_tables(cursor)
         _add_missing_columns(cursor)
         _seed_perfis(cursor)
+        _grant_permissoes_manutencao_relatorios(cursor)
         _seed_config(cursor)
         _seed_whatsapp_status(cursor)
+        _seed_equipamento_tipos(cursor)
         _seed_users(cursor)
 
 

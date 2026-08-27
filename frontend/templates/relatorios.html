@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Relatórios{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title"><i class="fa-solid fa-chart-column"></i> Relatórios</h2>
+    <p class="page-subtitle">Consulte e exporte manutenções e tickets</p>
+  </div>
+</div>
+
+<!-- ABAS -->
+<div class="cfg-tabs">
+  <a href="{{ url_for('relatorios.relatorios', aba='manutencoes') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if aba == 'manutencoes' else '' }}">
+    <i class="fa-solid fa-screwdriver-wrench"></i> Manutenções
+  </a>
+  <a href="{{ url_for('relatorios.relatorios', aba='tickets') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if aba == 'tickets' else '' }}">
+    <i class="fa-solid fa-ticket-simple"></i> Tickets
+  </a>
+</div>
+
+<!-- FILTROS -->
+<div class="card-panel mb-3 mt-3">
+  <form method="GET" action="{{ url_for('relatorios.relatorios') }}" class="filtros-form">
+    <input type="hidden" name="aba" value="{{ aba }}" />
+    <div class="filtros-row">
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-calendar-days"></i> De</label>
+        <input type="date" name="inicio" value="{{ filtros.get('inicio', '') }}" class="form-inp-sm" />
+      </div>
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-calendar-days"></i> Até</label>
+        <input type="date" name="fim" value="{{ filtros.get('fim', '') }}" class="form-inp-sm" />
+      </div>
+      {% if unidades %}
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-store"></i> Unidade</label>
+        <select name="unidade" class="form-inp-sm form-sel-sm">
+          <option value="">Todas</option>
+          {% for u in unidades %}
+          <option value="{{ u }}" {{ 'selected' if filtros.get('unidade') == u }}>{{ u }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% if aba == 'manutencoes' %}
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-kitchen-set"></i> Equipamento</label>
+        <select name="equipamento_id" class="form-inp-sm form-sel-sm">
+          <option value="">Todos</option>
+          {% for e in equipamentos %}
+          <option value="{{ e.id }}" {{ 'selected' if filtros.get('equipamento_id') == e.id }}>{{ e.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-user"></i> Responsável</label>
+        <select name="responsavel_id" class="form-inp-sm form-sel-sm">
+          <option value="">Todos</option>
+          {% for u in usuarios %}
+          <option value="{{ u.id }}" {{ 'selected' if filtros.get('responsavel_id') == u.id }}>{{ u.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-circle-half-stroke"></i> Status</label>
+        <select name="status" class="form-inp-sm form-sel-sm">
+          <option value="">Todos</option>
+          {% for s in status_list_manutencao %}
+          <option value="{{ s }}" {{ 'selected' if filtros.get('status') == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% else %}
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-circle-half-stroke"></i> Status</label>
+        <select name="status" class="form-inp-sm form-sel-sm">
+          <option value="">Todos</option>
+          {% for s in status_list_ticket %}
+          <option value="{{ s }}" {{ 'selected' if filtros.get('status') == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="filtro-item align-self-end">
+        <button type="submit" class="btn-filtrar">
+          <i class="fa-solid fa-filter"></i> Filtrar
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- EXPORTAR -->
+<div class="mb-3" style="display:flex; gap:10px; justify-content:flex-end;">
+  {% set export_route = 'relatorios.exportar_manutencoes' if aba == 'manutencoes' else 'relatorios.exportar_tickets' %}
+  <a href="{{ url_for(export_route, formato='xlsx', **filtros) }}" class="btn-cancel">
+    <i class="fa-solid fa-file-excel"></i> Exportar Excel
+  </a>
+  <a href="{{ url_for(export_route, formato='pdf', **filtros) }}" class="btn-submit">
+    <i class="fa-solid fa-file-pdf"></i> Exportar PDF
+  </a>
+</div>
+
+<!-- RESULTADOS -->
+<div class="card-panel p-0">
+  {% if aba == 'manutencoes' %}
+    {% if manutencoes %}
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:110px">Nº</th>
+            <th>Equipamento</th>
+            <th style="width:150px">Unidade</th>
+            <th style="width:130px">Status</th>
+            <th style="width:150px">Responsável</th>
+            <th style="width:155px">Data/Hora</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in manutencoes %}
+          <tr onclick="window.location='{{ url_for('manutencao.ver_manutencao', manutencao_id=m.id) }}'" style="cursor:pointer">
+            <td><span class="ticket-num">{{ m.numero }}</span></td>
+            <td>{{ m.equipamento_nome }}</td>
+            <td>{{ m.unidade }}</td>
+            <td>
+              <span class="badge-status badge-{{ m.status | lower | replace(' ', '-') }}">{{ m.status }}</span>
+            </td>
+            <td class="text-muted small">{{ m.responsavel_nome or '—' }}</td>
+            <td class="text-muted small">{{ m.data_formatada }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-solid fa-screwdriver-wrench"></i>
+      <p>Nenhuma manutenção encontrada para os filtros selecionados</p>
+    </div>
+    {% endif %}
+  {% else %}
+    {% if tickets %}
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:110px">Nº</th>
+            <th>Título</th>
+            <th style="width:150px">Sistema</th>
+            <th style="width:130px">Unidade</th>
+            <th style="width:130px">Status</th>
+            <th style="width:155px">Data/Hora</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tickets %}
+          <tr onclick="window.location='{{ url_for('tickets.ver_ticket', ticket_id=t.id) }}'" style="cursor:pointer">
+            <td><span class="ticket-num">{{ t.numero }}</span></td>
+            <td>{{ t.nome }}</td>
+            <td>{{ t.sistema }}</td>
+            <td>{{ t.unidade or '—' }}</td>
+            <td>
+              <span class="badge-status badge-{{ t.status | lower | replace(' ', '-') }}">{{ t.status }}</span>
+            </td>
+            <td class="text-muted small">{{ t.data_formatada }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-solid fa-ticket-simple"></i>
+      <p>Nenhum ticket encontrado para os filtros selecionados</p>
+    </div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

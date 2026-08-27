@@ -1,7 +1,10 @@
 import threading
 import time
 
-from db.repositories import config_repository, tickets_repository, users_repository
+from db.repositories import (
+    config_repository, equipamentos_repository, manutencoes_repository,
+    tickets_repository, users_repository,
+)
 
 from .config import ALLOWED_EXTENSIONS, STATUS_LIST
 
@@ -68,14 +71,16 @@ def get_default_perfis():
             'id': 'perfil-supervisor',
             'nome': 'Supervisor',
             'descricao': 'Acompanha tickets e atualiza status',
-            'permissoes': ['dashboard', 'acompanhamento', 'ver_ticket', 'atualizar_ticket', 'comentar_ticket', 'meu_perfil'],
+            'permissoes': ['dashboard', 'acompanhamento', 'ver_ticket', 'atualizar_ticket', 'comentar_ticket',
+                           'manutencao_ver', 'manutencao_gerenciar', 'relatorios_ver', 'meu_perfil'],
             'padrao': True,
         },
         {
             'id': 'perfil-funcionario',
             'nome': 'Funcionário',
             'descricao': 'Abre e acompanha seus próprios tickets',
-            'permissoes': ['dashboard', 'abrir_ticket', 'acompanhamento', 'ver_ticket', 'comentar_ticket', 'meu_perfil'],
+            'permissoes': ['dashboard', 'abrir_ticket', 'acompanhamento', 'ver_ticket', 'comentar_ticket',
+                           'manutencao_ver', 'relatorios_ver', 'meu_perfil'],
             'padrao': True,
         },
     ]
@@ -100,6 +105,7 @@ def get_default_config():
             ]
         },
         'sistemas': ['Teknisa', 'Kdápio (Callcenter)', 'Lumia', 'iFood'],
+        'unidades': [],
         'personalizacao': {
             'cor_botao':          '#111111',
             'cor_botao_light':    '#f0f0f0',
@@ -144,6 +150,10 @@ def get_sistemas():
     return load_config().get('sistemas', ['Teknisa', 'Kdápio (Callcenter)', 'Lumia', 'iFood'])
 
 
+def get_unidades():
+    return load_config().get('unidades', [])
+
+
 def get_ticket_stats():
     global _stats_cache, _stats_cache_at
     if _stats_cache is not None and (time.monotonic() - _stats_cache_at) < _stats_cache_ttl:
@@ -158,6 +168,34 @@ def get_ticket_stats():
 
 def get_next_ticket_number():
     return tickets_repository.get_next_ticket_number()
+
+
+# ─────────────────────────────────────────
+#  EQUIPAMENTOS / MANUTENÇÕES
+# ─────────────────────────────────────────
+
+def get_equipamento_tipos():
+    return equipamentos_repository.list_tipos()
+
+
+def load_equipamentos():
+    return equipamentos_repository.list_equipamentos()
+
+
+def save_equipamentos(equipamentos):
+    equipamentos_repository.save_equipamentos(equipamentos)
+
+
+def load_manutencoes():
+    return manutencoes_repository.list_manutencoes()
+
+
+def save_manutencoes(manutencoes):
+    manutencoes_repository.save_manutencoes(manutencoes)
+
+
+def get_next_manutencao_numero():
+    return manutencoes_repository.get_next_manutencao_numero()
 
 
 def allowed_file(filename):

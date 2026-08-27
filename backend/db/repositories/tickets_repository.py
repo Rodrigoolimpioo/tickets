@@ -21,6 +21,7 @@ def _ticket_to_dict(row: dict, historico: list) -> dict:
         'nome': row['nome'],
         'ocorrencia': row['ocorrencia'],
         'sistema': row['sistema'],
+        'unidade': row['unidade'] or '',
         'arquivo': arquivo,
         'data_criacao': criacao.strftime(_DATA_CRIACAO_FMT),
         'data_formatada': criacao.strftime(_DATA_FORMATADA_FMT),
@@ -35,7 +36,7 @@ def list_tickets() -> list:
     with get_cursor() as cursor:
         cursor.execute(
             """
-            SELECT ID, NUMERO, NOME, OCORRENCIA, SISTEMA, ARQUIVO_FILENAME,
+            SELECT ID, NUMERO, NOME, OCORRENCIA, SISTEMA, UNIDADE, ARQUIVO_FILENAME,
                    ARQUIVO_ORIGINAL_NAME, ARQUIVO_TIPO, DATA_CRIACAO, STATUS,
                    CRIADO_POR, CRIADO_POR_ID
             FROM TICKETS
@@ -106,22 +107,23 @@ def save_tickets(tickets: list) -> None:
                 ON (dst.ID = src.id)
                 WHEN MATCHED THEN UPDATE SET
                     NUMERO = :numero, NOME = :nome, OCORRENCIA = :ocorrencia,
-                    SISTEMA = :sistema, ARQUIVO_FILENAME = :arquivo_filename,
+                    SISTEMA = :sistema, UNIDADE = :unidade, ARQUIVO_FILENAME = :arquivo_filename,
                     ARQUIVO_ORIGINAL_NAME = :arquivo_original_name, ARQUIVO_TIPO = :arquivo_tipo,
                     DATA_CRIACAO = :data_criacao, STATUS = :status,
                     CRIADO_POR = :criado_por, CRIADO_POR_ID = :criado_por_id
                 WHEN NOT MATCHED THEN INSERT (
-                    ID, NUMERO, NOME, OCORRENCIA, SISTEMA, ARQUIVO_FILENAME,
+                    ID, NUMERO, NOME, OCORRENCIA, SISTEMA, UNIDADE, ARQUIVO_FILENAME,
                     ARQUIVO_ORIGINAL_NAME, ARQUIVO_TIPO, DATA_CRIACAO, STATUS,
                     CRIADO_POR, CRIADO_POR_ID
                 ) VALUES (
-                    :id, :numero, :nome, :ocorrencia, :sistema, :arquivo_filename,
+                    :id, :numero, :nome, :ocorrencia, :sistema, :unidade, :arquivo_filename,
                     :arquivo_original_name, :arquivo_tipo, :data_criacao, :status,
                     :criado_por, :criado_por_id
                 )
                 """,
                 id=ticket['id'], numero=ticket['numero'], nome=ticket['nome'],
                 ocorrencia=ticket['ocorrencia'], sistema=ticket['sistema'],
+                unidade=ticket.get('unidade') or None,
                 arquivo_filename=arquivo.get('filename'),
                 arquivo_original_name=arquivo.get('original_name'),
                 arquivo_tipo=arquivo.get('tipo'), data_criacao=data_criacao,
