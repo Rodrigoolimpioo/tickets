@@ -62,11 +62,12 @@ def nova_manutencao():
 
     if request.method == 'POST':
         equipamento_id = request.form.get('equipamento_id', '')
+        unidade        = request.form.get('unidade', '').strip()
         descricao      = request.form.get('descricao', '').strip()
         responsavel_id = request.form.get('responsavel_id', '') or None
 
         equipamento = next((e for e in equipamentos if e['id'] == equipamento_id), None)
-        if not equipamento or not descricao:
+        if not equipamento or not unidade or not descricao:
             error = 'Preencha todos os campos obrigatórios.'
         else:
             foto_info = None
@@ -83,7 +84,7 @@ def nova_manutencao():
                 'id': str(uuid.uuid4()),
                 'numero': storage.get_next_manutencao_numero(),
                 'equipamento_id': equipamento['id'],
-                'unidade': equipamento['unidade'],
+                'unidade': unidade,
                 'responsavel_id': responsavel['id'] if responsavel else None,
                 'responsavel_nome': responsavel['name'] if responsavel else '',
                 'descricao': descricao,
@@ -106,7 +107,8 @@ def nova_manutencao():
                        entidade_tipo='manutencao', entidade_id=manutencao['id'])
             return redirect(url_for('manutencao.ver_manutencao', manutencao_id=manutencao['id']))
 
-    return render_template('abrir_manutencao.html', equipamentos=equipamentos, usuarios=usuarios, error=error)
+    return render_template('abrir_manutencao.html', equipamentos=equipamentos, usuarios=usuarios,
+                           unidades=storage.get_unidades(), error=error)
 
 
 @manutencao_bp.route('/manutencao/<manutencao_id>')

@@ -43,13 +43,17 @@
           </select>
         </div>
 
-        <!-- UNIDADE (preenchida automaticamente a partir do equipamento) -->
+        <!-- UNIDADE (pré-selecionada a partir do equipamento, mas editável) -->
         <div class="form-group">
           <label class="form-lbl">
-            <i class="fa-solid fa-store"></i> Unidade
+            <i class="fa-solid fa-store"></i> Unidade <span class="req">*</span>
           </label>
-          <input type="text" id="unidadeDisplay" class="form-inp" value="" readonly
-                 placeholder="Selecione um equipamento para preencher a unidade" />
+          <select name="unidade" id="unidadeSelect" class="form-inp form-sel" required>
+            <option value="">— Selecione a unidade —</option>
+            {% for u in unidades %}
+            <option value="{{ u }}">{{ u }}</option>
+            {% endfor %}
+          </select>
         </div>
 
         <!-- RESPONSÁVEL -->
@@ -109,9 +113,9 @@
         <div class="info-box">
           <i class="fa-solid fa-circle-info"></i>
           <div>
-            <strong>Informações automáticas:</strong> O número da manutenção, a unidade (a partir do equipamento
-            selecionado), a data/hora de abertura (horário de Brasília) e o responsável pela abertura serão
-            registrados automaticamente.
+            <strong>Informações automáticas:</strong> O número da manutenção e a data/hora de abertura
+            (horário de Brasília) serão registrados automaticamente. A unidade já vem pré-selecionada a
+            partir do equipamento escolhido, mas pode ser alterada.
           </div>
         </div>
 
@@ -137,12 +141,16 @@
     counter.textContent = textarea.value.length;
   });
 
-  // Preenche a unidade (somente leitura) a partir do equipamento selecionado
+  // Pré-seleciona a unidade a partir do equipamento escolhido — o usuário
+  // ainda pode trocar manualmente depois, o select não fica travado.
   const equipamentoSelect = document.getElementById('equipamentoSelect');
-  const unidadeDisplay = document.getElementById('unidadeDisplay');
+  const unidadeSelect = document.getElementById('unidadeSelect');
   equipamentoSelect.addEventListener('change', () => {
     const opt = equipamentoSelect.options[equipamentoSelect.selectedIndex];
-    unidadeDisplay.value = opt ? (opt.getAttribute('data-unidade') || '') : '';
+    const unidade = opt ? (opt.getAttribute('data-unidade') || '') : '';
+    if (unidade && [...unidadeSelect.options].some((o) => o.value === unidade)) {
+      unidadeSelect.value = unidade;
+    }
   });
 
   // Upload da foto do equipamento
