@@ -113,10 +113,11 @@
         <thead>
           <tr>
             <th style="width:110px">Nº</th>
-            <th>Equipamento</th>
+            <th>Máquinario</th>
             <th style="width:150px">Unidade</th>
             <th style="width:130px">Status</th>
             <th style="width:150px">Responsável</th>
+            <th style="width:110px">Valor R$</th>
             <th style="width:155px">Data/Hora</th>
           </tr>
         </thead>
@@ -130,6 +131,7 @@
               <span class="badge-status badge-{{ m.status | lower | replace(' ', '-') }}">{{ m.status }}</span>
             </td>
             <td class="text-muted small">{{ m.responsavel_nome or '—' }}</td>
+            <td class="text-muted small">{{ m.valor_formatado and ('R$ ' ~ m.valor_formatado) or '—' }}</td>
             <td class="text-muted small">{{ m.data_formatada }}</td>
           </tr>
           {% endfor %}
@@ -154,6 +156,7 @@
             <th style="width:130px">Unidade</th>
             <th style="width:130px">Status</th>
             <th style="width:155px">Data/Hora</th>
+            <th style="width:155px">Data de Fechamento</th>
           </tr>
         </thead>
         <tbody>
@@ -167,6 +170,7 @@
               <span class="badge-status badge-{{ t.status | lower | replace(' ', '-') }}">{{ t.status }}</span>
             </td>
             <td class="text-muted small">{{ t.data_formatada }}</td>
+            <td class="text-muted small">{{ t.data_fechamento_formatada or '—' }}</td>
           </tr>
           {% endfor %}
         </tbody>

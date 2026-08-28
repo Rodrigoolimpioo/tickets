@@ -40,6 +40,7 @@ def _filtrar_manutencoes(args):
     equipamentos_por_id = {e['id']: e for e in storage.load_equipamentos()}
     for m in itens:
         m['equipamento_nome'] = equipamentos_por_id.get(m['equipamento_id'], {}).get('nome', '—')
+        m['valor_formatado'] = f"{m['valor']:.2f}".replace('.', ',') if m.get('valor') is not None else ''
 
     return sorted(itens, key=lambda x: x.get('data_criacao', ''), reverse=True)
 
@@ -63,13 +64,15 @@ def _filtrar_tickets(args):
 
 
 _COLUNAS_MANUTENCOES = [
-    ('numero', 'Número'), ('equipamento_nome', 'Equipamento'), ('unidade', 'Unidade'),
-    ('status', 'Status'), ('responsavel_nome', 'Responsável'), ('descricao', 'Descrição'),
+    ('numero', 'Número'), ('equipamento_nome', 'Máquinario'), ('unidade', 'Unidade'),
+    ('status', 'Status'), ('responsavel_nome', 'Responsável'), ('descricao', 'Motivo'),
+    ('servico_feito', 'Serviço Feito'), ('valor_formatado', 'Valor R$'),
     ('criado_por', 'Aberto por'), ('data_formatada', 'Data'),
 ]
 _COLUNAS_TICKETS = [
     ('numero', 'Número'), ('nome', 'Nome'), ('sistema', 'Sistema'), ('unidade', 'Unidade'),
     ('status', 'Status'), ('criado_por', 'Aberto por'), ('data_formatada', 'Data'),
+    ('data_fechamento_formatada', 'Data de Fechamento'),
 ]
 
 

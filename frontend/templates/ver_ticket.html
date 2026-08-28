@@ -53,6 +53,12 @@
           <span class="detail-label">Data/Hora de Criação</span>
           <span class="detail-value">{{ ticket.data_formatada }} <small class="text-muted">(Horário de Brasília)</small></span>
         </div>
+        {% if ticket.data_fechamento_formatada %}
+        <div class="detail-item">
+          <span class="detail-label">Data/Hora de Fechamento</span>
+          <span class="detail-value">{{ ticket.data_fechamento_formatada }}</span>
+        </div>
+        {% endif %}
       </div>
 
       <div class="mt-3">

@@ -46,6 +46,9 @@ LOGO_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 MAX_CONTENT_LENGTH = 100 * 1024 * 1024
 
 STATUS_LIST = ['Aberto', 'Em Andamento', 'Resolvido', 'Incubado']
+# Status que tiram o ticket do fluxo ativo — usados pra marcar/limpar
+# DATA_FECHAMENTO (tempo de fechamento no relatório de tickets).
+STATUS_TICKET_FECHADOS = {'Resolvido', 'Incubado'}
 STATUS_LIST_MANUTENCAO = ['Aberta', 'Em Andamento', 'Concluída', 'Cancelada']
 ROLES_VALIDOS = {'admin', 'supervisor', 'funcionario'}
 HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')

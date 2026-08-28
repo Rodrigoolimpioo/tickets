@@ -69,6 +69,14 @@ def nova_manutencao():
         if not equipamento or not descricao:
             error = 'Preencha todos os campos obrigatórios.'
         else:
+            foto_info = None
+            if 'foto_equipamento' in request.files:
+                file = request.files['foto_equipamento']
+                if file and file.filename and storage.allowed_file(file.filename):
+                    fname = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
+                    file.save(os.path.join(UPLOADS_DIR, fname))
+                    foto_info = {'filename': fname, 'original_name': file.filename}
+
             responsavel = next((u for u in usuarios if u['id'] == responsavel_id), None) if responsavel_id else None
             now = get_brasilia_time()
             manutencao = {
@@ -85,6 +93,9 @@ def nova_manutencao():
                 'criado_por': session['name'],
                 'criado_por_id': session['user_id'],
                 'assinatura_filename': None,
+                'foto_equipamento': foto_info,
+                'valor': None,
+                'servico_feito': '',
                 'historico': [{'acao': 'Manutenção aberta', 'por': session['name'],
                                'data': now.strftime('%d/%m/%Y %H:%M:%S')}],
             }
@@ -119,14 +130,31 @@ def atualizar_manutencao(manutencao_id):
     manutencao = next((m for m in itens if m['id'] == manutencao_id), None)
     if not manutencao:
         return redirect(url_for('manutencao.manutencoes'))
-    novo_status = request.form.get('status', '')
-    comentario  = request.form.get('comentario', '').strip()
+    novo_status    = request.form.get('status', '')
+    comentario     = request.form.get('comentario', '').strip()
+    servico_feito  = request.form.get('servico_feito', '').strip()
+    valor_raw      = request.form.get('valor', '').strip().replace(',', '.')
+
     if novo_status in STATUS_LIST_MANUTENCAO:
         now = get_brasilia_time()
         manutencao['status'] = novo_status
+        detalhes_extra = []
+
+        if servico_feito:
+            manutencao['servico_feito'] = servico_feito
+            detalhes_extra.append(f'Serviço feito: {servico_feito}')
+        if valor_raw:
+            try:
+                manutencao['valor'] = round(float(valor_raw), 2)
+                detalhes_extra.append(f"Valor: R$ {manutencao['valor']:.2f}".replace('.', ','))
+            except ValueError:
+                pass
+
         entrada = f'Status alterado para "{novo_status}"'
         if comentario:
             entrada += f' — {comentario}'
+        if detalhes_extra:
+            entrada += ' — ' + ' · '.join(detalhes_extra)
         entrada = entrada[:HISTORICO_ACAO_MAX]
         manutencao['historico'].append({'acao': entrada, 'por': session['name'],
                                         'data': now.strftime('%d/%m/%Y %H:%M:%S')})

@@ -42,6 +42,16 @@ _ALTER_STATEMENTS = [
     # Módulo de Manutenção de Equipamentos: tickets ganham unidade (loja)
     # pra bater com o mesmo filtro do relatório de manutenções.
     "ALTER TABLE TICKETS ADD (UNIDADE VARCHAR2(100))",
+    # Data/hora em que o ticket saiu do fluxo ativo (foi pra Resolvido ou
+    # Incubado) — pedido pro relatório de tickets mostrar tempo de fechamento.
+    "ALTER TABLE TICKETS ADD (DATA_FECHAMENTO TIMESTAMP)",
+    # Campos do registro de manutenção pedidos pelo cliente, espelhando a
+    # planilha física que eles já usavam pra controlar manutenção de
+    # equipamento (colunas: máquina, serviço feito, motivo, valor, assinatura).
+    "ALTER TABLE MANUTENCOES ADD (FOTO_FILENAME VARCHAR2(500))",
+    "ALTER TABLE MANUTENCOES ADD (FOTO_ORIGINAL_NAME VARCHAR2(500))",
+    "ALTER TABLE MANUTENCOES ADD (VALOR NUMBER(10,2))",
+    "ALTER TABLE MANUTENCOES ADD (SERVICO_FEITO VARCHAR2(2000 CHAR))",
 ]
 
 _DDL_STATEMENTS = [
@@ -87,7 +97,8 @@ _DDL_STATEMENTS = [
         DATA_CRIACAO           TIMESTAMP     NOT NULL,
         STATUS                 VARCHAR2(30)  NOT NULL,
         CRIADO_POR             VARCHAR2(200) NOT NULL,
-        CRIADO_POR_ID          VARCHAR2(36)  NOT NULL
+        CRIADO_POR_ID          VARCHAR2(36)  NOT NULL,
+        DATA_FECHAMENTO        TIMESTAMP
     )
     """,
     """
@@ -169,7 +180,11 @@ _DDL_STATEMENTS = [
         DATA_CRIACAO        TIMESTAMP      NOT NULL,
         CRIADO_POR          VARCHAR2(200)  NOT NULL,
         CRIADO_POR_ID       VARCHAR2(36)   NOT NULL,
-        ASSINATURA_FILENAME VARCHAR2(255)
+        ASSINATURA_FILENAME VARCHAR2(255),
+        FOTO_FILENAME       VARCHAR2(500),
+        FOTO_ORIGINAL_NAME  VARCHAR2(500),
+        VALOR               NUMBER(10,2),
+        SERVICO_FEITO       VARCHAR2(2000 CHAR)
     )
     """,
     """

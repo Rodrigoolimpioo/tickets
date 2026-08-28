@@ -8,6 +8,7 @@ _DATA_FORMATADA_FMT = '%d/%m/%Y %H:%M:%S'
 
 def _ticket_to_dict(row: dict, historico: list) -> dict:
     criacao: datetime = row['data_criacao']
+    fechamento: datetime | None = row.get('data_fechamento')
     arquivo = None
     if row['arquivo_filename']:
         arquivo = {
@@ -25,6 +26,8 @@ def _ticket_to_dict(row: dict, historico: list) -> dict:
         'arquivo': arquivo,
         'data_criacao': criacao.strftime(_DATA_CRIACAO_FMT),
         'data_formatada': criacao.strftime(_DATA_FORMATADA_FMT),
+        'data_fechamento': fechamento.strftime(_DATA_CRIACAO_FMT) if fechamento else None,
+        'data_fechamento_formatada': fechamento.strftime(_DATA_FORMATADA_FMT) if fechamento else '',
         'status': row['status'],
         'criado_por': row['criado_por'],
         'criado_por_id': row['criado_por_id'],
@@ -38,7 +41,7 @@ def list_tickets() -> list:
             """
             SELECT ID, NUMERO, NOME, OCORRENCIA, SISTEMA, UNIDADE, ARQUIVO_FILENAME,
                    ARQUIVO_ORIGINAL_NAME, ARQUIVO_TIPO, DATA_CRIACAO, STATUS,
-                   CRIADO_POR, CRIADO_POR_ID
+                   CRIADO_POR, CRIADO_POR_ID, DATA_FECHAMENTO
             FROM TICKETS
             """
         )
@@ -100,6 +103,10 @@ def save_tickets(tickets: list) -> None:
         for ticket in tickets:
             arquivo = ticket.get('arquivo') or {}
             data_criacao = datetime.strptime(ticket['data_criacao'], _DATA_CRIACAO_FMT)
+            data_fechamento = (
+                datetime.strptime(ticket['data_fechamento'], _DATA_CRIACAO_FMT)
+                if ticket.get('data_fechamento') else None
+            )
             cursor.execute(
                 """
                 MERGE INTO TICKETS dst
@@ -110,15 +117,16 @@ def save_tickets(tickets: list) -> None:
                     SISTEMA = :sistema, UNIDADE = :unidade, ARQUIVO_FILENAME = :arquivo_filename,
                     ARQUIVO_ORIGINAL_NAME = :arquivo_original_name, ARQUIVO_TIPO = :arquivo_tipo,
                     DATA_CRIACAO = :data_criacao, STATUS = :status,
-                    CRIADO_POR = :criado_por, CRIADO_POR_ID = :criado_por_id
+                    CRIADO_POR = :criado_por, CRIADO_POR_ID = :criado_por_id,
+                    DATA_FECHAMENTO = :data_fechamento
                 WHEN NOT MATCHED THEN INSERT (
                     ID, NUMERO, NOME, OCORRENCIA, SISTEMA, UNIDADE, ARQUIVO_FILENAME,
                     ARQUIVO_ORIGINAL_NAME, ARQUIVO_TIPO, DATA_CRIACAO, STATUS,
-                    CRIADO_POR, CRIADO_POR_ID
+                    CRIADO_POR, CRIADO_POR_ID, DATA_FECHAMENTO
                 ) VALUES (
                     :id, :numero, :nome, :ocorrencia, :sistema, :unidade, :arquivo_filename,
                     :arquivo_original_name, :arquivo_tipo, :data_criacao, :status,
-                    :criado_por, :criado_por_id
+                    :criado_por, :criado_por_id, :data_fechamento
                 )
                 """,
                 id=ticket['id'], numero=ticket['numero'], nome=ticket['nome'],
@@ -128,7 +136,7 @@ def save_tickets(tickets: list) -> None:
                 arquivo_original_name=arquivo.get('original_name'),
                 arquivo_tipo=arquivo.get('tipo'), data_criacao=data_criacao,
                 status=ticket['status'], criado_por=ticket['criado_por'],
-                criado_por_id=ticket['criado_por_id'],
+                criado_por_id=ticket['criado_por_id'], data_fechamento=data_fechamento,
             )
 
         if ids_atuais:

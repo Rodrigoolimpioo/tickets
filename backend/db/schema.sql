@@ -47,7 +47,10 @@ CREATE TABLE TICKETS (
     CRIADO_POR             VARCHAR2(200) NOT NULL,
     -- Sem FK para USERS: excluir um usuário não deve exigir excluir seus
     -- tickets (mesmo comportamento do JSON original).
-    CRIADO_POR_ID          VARCHAR2(36)  NOT NULL
+    CRIADO_POR_ID          VARCHAR2(36)  NOT NULL,
+    -- Preenchida quando o status sai do fluxo ativo (Resolvido/Incubado) e
+    -- limpa se reabrir — usada no relatório de tickets (tempo de fechamento).
+    DATA_FECHAMENTO        TIMESTAMP
 );
 
 CREATE TABLE TICKET_HISTORICO (
@@ -142,7 +145,14 @@ CREATE TABLE MANUTENCOES (
     DATA_CRIACAO        TIMESTAMP      NOT NULL,
     CRIADO_POR          VARCHAR2(200)  NOT NULL,
     CRIADO_POR_ID       VARCHAR2(36)   NOT NULL,
-    ASSINATURA_FILENAME VARCHAR2(255)
+    ASSINATURA_FILENAME VARCHAR2(255),
+    -- Campos espelhando a planilha física de controle de manutenção que o
+    -- cliente já usava (máquina/serviço feito/motivo/valor/assinatura) —
+    -- DESCRICAO acima cobre "motivo".
+    FOTO_FILENAME       VARCHAR2(500),
+    FOTO_ORIGINAL_NAME  VARCHAR2(500),
+    VALOR               NUMBER(10,2),
+    SERVICO_FEITO       VARCHAR2(2000 CHAR)
 );
 
 CREATE TABLE MANUTENCAO_HISTORICO (

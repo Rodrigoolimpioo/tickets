@@ -53,12 +53,42 @@
           <span class="detail-label">Data/Hora de Abertura</span>
           <span class="detail-value">{{ manutencao.data_formatada }} <small class="text-muted">(Horário de Brasília)</small></span>
         </div>
+        {% if manutencao.valor is not none %}
+        <div class="detail-item">
+          <span class="detail-label">Valor</span>
+          <span class="detail-value">R$ {{ '%.2f' | format(manutencao.valor) | replace('.', ',') }}</span>
+        </div>
+        {% endif %}
       </div>
 
       <div class="mt-3">
-        <span class="detail-label">Descrição</span>
+        <span class="detail-label">Motivo</span>
         <div class="ocorrencia-box">{{ manutencao.descricao }}</div>
       </div>
+
+      {% if manutencao.servico_feito %}
+      <div class="mt-3">
+        <span class="detail-label">Serviço Feito</span>
+        <div class="ocorrencia-box">{{ manutencao.servico_feito }}</div>
+      </div>
+      {% endif %}
+
+      {% if manutencao.foto_equipamento %}
+      <div class="mt-3">
+        <span class="detail-label">
+          <i class="fa-solid fa-camera"></i> Foto do Equipamento
+        </span>
+        <div class="anexo-box">
+          <a href="{{ url_for('misc.uploaded_file', filename=manutencao.foto_equipamento.filename) }}" target="_blank">
+            <img src="{{ url_for('misc.uploaded_file', filename=manutencao.foto_equipamento.filename) }}"
+                 class="anexo-media" alt="Foto do equipamento" />
+          </a>
+          <div class="anexo-name">
+            <i class="fa-solid fa-image"></i> {{ manutencao.foto_equipamento.original_name }}
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     <!-- HISTÓRICO -->
@@ -134,9 +164,20 @@
           </select>
         </div>
         <div class="form-group">
+          <label class="form-lbl-sm">Serviço Feito (opcional)</label>
+          <textarea name="servico_feito" class="form-inp-sm" rows="2" maxlength="2000"
+                    placeholder="O que foi feito no equipamento...">{{ manutencao.servico_feito }}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl-sm">Valor R$ (opcional)</label>
+          <input type="text" inputmode="decimal" name="valor" class="form-inp-sm w-100"
+                 placeholder="Ex.: 250,00"
+                 value="{{ ('%.2f' | format(manutencao.valor) | replace('.', ',')) if manutencao.valor is not none else '' }}" />
+        </div>
+        <div class="form-group">
           <label class="form-lbl-sm">Observação (opcional)</label>
           <textarea name="comentario" class="form-inp-sm" rows="2" maxlength="3900"
-                    placeholder="Motivo da atualização..."></textarea>
+                    placeholder="Observação sobre a atualização..."></textarea>
         </div>
         <button type="submit" class="btn-submit w-100">
           <i class="fa-solid fa-check"></i> Atualizar
@@ -207,6 +248,12 @@
           <span class="resumo-label">Assinatura</span>
           <span class="resumo-value">{{ 'Sim' if manutencao.assinatura_filename else 'Não' }}</span>
         </div>
+        {% if manutencao.valor is not none %}
+        <div class="resumo-item">
+          <span class="resumo-label">Valor</span>
+          <span class="resumo-value">R$ {{ '%.2f' | format(manutencao.valor) | replace('.', ',') }}</span>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>

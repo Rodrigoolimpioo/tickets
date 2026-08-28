@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 
 from core import storage
 from core.audit import log_evento
-from core.config import HISTORICO_ACAO_MAX, STATUS_LIST, UPLOADS_DIR
+from core.config import HISTORICO_ACAO_MAX, STATUS_LIST, STATUS_TICKET_FECHADOS, UPLOADS_DIR
 from core.security import login_required, permission_required, role_required
 from core.services import whatsapp_service
 from core.time_utils import get_brasilia_time
@@ -127,6 +127,9 @@ def atualizar_ticket(ticket_id):
     if novo_status in STATUS_LIST:
         now = get_brasilia_time()
         ticket['status'] = novo_status
+        ticket['data_fechamento'] = (
+            now.strftime('%Y-%m-%dT%H:%M:%S') if novo_status in STATUS_TICKET_FECHADOS else None
+        )
         entrada = f'Status alterado para "{novo_status}"'
         if comentario:
             entrada += f' — {comentario}'

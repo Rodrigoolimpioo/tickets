@@ -8,6 +8,9 @@ _DATA_FORMATADA_FMT = '%d/%m/%Y %H:%M:%S'
 
 def _manutencao_to_dict(row: dict, historico: list) -> dict:
     criacao: datetime = row['data_criacao']
+    foto = None
+    if row.get('foto_filename'):
+        foto = {'filename': row['foto_filename'], 'original_name': row['foto_original_name']}
     return {
         'id': row['id'],
         'numero': row['numero'],
@@ -22,6 +25,9 @@ def _manutencao_to_dict(row: dict, historico: list) -> dict:
         'criado_por': row['criado_por'],
         'criado_por_id': row['criado_por_id'],
         'assinatura_filename': row['assinatura_filename'],
+        'foto_equipamento': foto,
+        'valor': float(row['valor']) if row.get('valor') is not None else None,
+        'servico_feito': row.get('servico_feito') or '',
         'historico': historico,
     }
 
@@ -31,7 +37,8 @@ def list_manutencoes() -> list:
         cursor.execute(
             """
             SELECT ID, NUMERO, EQUIPAMENTO_ID, UNIDADE, RESPONSAVEL_ID, RESPONSAVEL_NOME,
-                   DESCRICAO, DATA_CRIACAO, STATUS, CRIADO_POR, CRIADO_POR_ID, ASSINATURA_FILENAME
+                   DESCRICAO, DATA_CRIACAO, STATUS, CRIADO_POR, CRIADO_POR_ID, ASSINATURA_FILENAME,
+                   FOTO_FILENAME, FOTO_ORIGINAL_NAME, VALOR, SERVICO_FEITO
             FROM MANUTENCOES
             """
         )
@@ -85,13 +92,17 @@ def save_manutencoes(manutencoes: list) -> None:
                     RESPONSAVEL_ID = :responsavel_id, RESPONSAVEL_NOME = :responsavel_nome,
                     DESCRICAO = :descricao, DATA_CRIACAO = :data_criacao, STATUS = :status,
                     CRIADO_POR = :criado_por, CRIADO_POR_ID = :criado_por_id,
-                    ASSINATURA_FILENAME = :assinatura_filename
+                    ASSINATURA_FILENAME = :assinatura_filename,
+                    FOTO_FILENAME = :foto_filename, FOTO_ORIGINAL_NAME = :foto_original_name,
+                    VALOR = :valor, SERVICO_FEITO = :servico_feito
                 WHEN NOT MATCHED THEN INSERT (
                     ID, NUMERO, EQUIPAMENTO_ID, UNIDADE, RESPONSAVEL_ID, RESPONSAVEL_NOME,
-                    DESCRICAO, DATA_CRIACAO, STATUS, CRIADO_POR, CRIADO_POR_ID, ASSINATURA_FILENAME
+                    DESCRICAO, DATA_CRIACAO, STATUS, CRIADO_POR, CRIADO_POR_ID, ASSINATURA_FILENAME,
+                    FOTO_FILENAME, FOTO_ORIGINAL_NAME, VALOR, SERVICO_FEITO
                 ) VALUES (
                     :id, :numero, :equipamento_id, :unidade, :responsavel_id, :responsavel_nome,
-                    :descricao, :data_criacao, :status, :criado_por, :criado_por_id, :assinatura_filename
+                    :descricao, :data_criacao, :status, :criado_por, :criado_por_id, :assinatura_filename,
+                    :foto_filename, :foto_original_name, :valor, :servico_feito
                 )
                 """,
                 id=m['id'], numero=m['numero'], equipamento_id=m['equipamento_id'],
@@ -99,6 +110,9 @@ def save_manutencoes(manutencoes: list) -> None:
                 responsavel_nome=m.get('responsavel_nome') or None, descricao=m['descricao'],
                 data_criacao=data_criacao, status=m['status'], criado_por=m['criado_por'],
                 criado_por_id=m['criado_por_id'], assinatura_filename=m.get('assinatura_filename'),
+                foto_filename=(m.get('foto_equipamento') or {}).get('filename'),
+                foto_original_name=(m.get('foto_equipamento') or {}).get('original_name'),
+                valor=m.get('valor'), servico_feito=m.get('servico_feito') or None,
             )
 
         if ids_atuais:
