@@ -67,6 +67,7 @@
           <th style="width:150px">Unidade</th>
           <th style="width:130px">Status</th>
           <th style="width:150px">Responsável</th>
+          <th style="width:110px">Valor R$</th>
           <th style="width:155px">Data/Hora</th>
         </tr>
       </thead>
@@ -85,6 +86,7 @@
             </span>
           </td>
           <td class="text-muted small">{{ m.responsavel_nome or '—' }}</td>
+          <td class="text-muted small">{{ ('R$ %.2f' | format(m.valor) | replace('.', ',')) if m.valor is not none else '—' }}</td>
           <td class="text-muted small">{{ m.data_formatada }}</td>
         </tr>
         {% endfor %}
