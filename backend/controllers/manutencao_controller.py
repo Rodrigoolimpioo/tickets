@@ -121,7 +121,7 @@ def ver_manutencao(manutencao_id):
         return redirect(url_for('manutencao.manutencoes'))
     equipamento = next((e for e in storage.load_equipamentos() if e['id'] == manutencao['equipamento_id']), None)
     return render_template('ver_manutencao.html', manutencao=manutencao, equipamento=equipamento,
-                           status_list=STATUS_LIST_MANUTENCAO)
+                           status_list=STATUS_LIST_MANUTENCAO, erro=request.args.get('erro', ''))
 
 
 @manutencao_bp.route('/manutencao/<manutencao_id>/atualizar', methods=['POST'])
@@ -136,6 +136,13 @@ def atualizar_manutencao(manutencao_id):
     comentario     = request.form.get('comentario', '').strip()
     servico_feito  = request.form.get('servico_feito', '').strip()
     valor_raw      = request.form.get('valor', '').strip().replace(',', '.')
+
+    # "Serviço Feito" é obrigatório pra concluir — não dá pra fechar uma
+    # manutenção sem registrar o que foi feito (aceita o que já estava
+    # salvo de uma atualização anterior, não precisa reescrever toda vez).
+    if novo_status == 'Concluída' and not (servico_feito or manutencao.get('servico_feito')):
+        return redirect(url_for('manutencao.ver_manutencao', manutencao_id=manutencao_id,
+                                erro='servico_feito_obrigatorio'))
 
     if novo_status in STATUS_LIST_MANUTENCAO:
         now = get_brasilia_time()

@@ -154,18 +154,27 @@
       <div class="card-panel-header">
         <h5><i class="fa-solid fa-pen-to-square"></i> Atualizar Status</h5>
       </div>
-      <form method="POST" action="{{ url_for('manutencao.atualizar_manutencao', manutencao_id=manutencao.id) }}">
+      {% if erro == 'servico_feito_obrigatorio' %}
+      <div class="alert-msg alert-error mb-3">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Pra marcar como "Concluída", preencha o campo <strong>Serviço Feito</strong> antes.
+      </div>
+      {% endif %}
+      <form method="POST" action="{{ url_for('manutencao.atualizar_manutencao', manutencao_id=manutencao.id) }}"
+            id="formAtualizarStatus">
         <div class="form-group">
           <label class="form-lbl-sm">Novo Status</label>
-          <select name="status" class="form-inp-sm form-sel-sm w-100" required>
+          <select name="status" id="statusSelect" class="form-inp-sm form-sel-sm w-100" required>
             {% for s in status_list %}
             <option value="{{ s }}" {{ 'selected' if manutencao.status == s }}>{{ s }}</option>
             {% endfor %}
           </select>
         </div>
         <div class="form-group">
-          <label class="form-lbl-sm">Serviço Feito (opcional)</label>
-          <textarea name="servico_feito" class="form-inp-sm" rows="2" maxlength="2000"
+          <label class="form-lbl-sm" id="servicoFeitoLabel">
+            Serviço Feito <span id="servicoFeitoOpcional" class="opcional">(opcional)</span>
+          </label>
+          <textarea name="servico_feito" id="servicoFeitoInput" class="form-inp-sm" rows="2" maxlength="2000"
                     placeholder="O que foi feito no equipamento...">{{ manutencao.servico_feito }}</textarea>
         </div>
         <div class="form-group">
@@ -266,6 +275,28 @@ function mostrarNomeArquivo(input) {
   const span = document.getElementById('nomeArquivoComentario');
   span.textContent = input.files.length ? input.files[0].name : '';
 }
+
+// "Serviço Feito" vira obrigatório ao marcar a manutenção como Concluída
+(function() {
+  const statusSelect = document.getElementById('statusSelect');
+  const servicoFeitoInput = document.getElementById('servicoFeitoInput');
+  const servicoFeitoLabel = document.getElementById('servicoFeitoLabel');
+  const servicoFeitoOpcional = document.getElementById('servicoFeitoOpcional');
+  if (!statusSelect || !servicoFeitoInput) return;
+
+  function atualizarObrigatoriedade() {
+    const concluida = statusSelect.value === 'Concluída';
+    servicoFeitoInput.required = concluida;
+    servicoFeitoOpcional.textContent = concluida ? '*' : '(opcional)';
+    servicoFeitoOpcional.classList.toggle('req', concluida);
+    servicoFeitoOpcional.classList.toggle('opcional', !concluida);
+    servicoFeitoLabel.classList.toggle('text-danger', concluida && !servicoFeitoInput.value.trim());
+  }
+
+  statusSelect.addEventListener('change', atualizarObrigatoriedade);
+  servicoFeitoInput.addEventListener('input', atualizarObrigatoriedade);
+  atualizarObrigatoriedade();
+})();
 
 {% if not manutencao.assinatura_filename %}
 (function() {
