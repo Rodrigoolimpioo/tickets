@@ -116,12 +116,14 @@ EQUIPAMENTO_TIPOS_PADRAO = {
         'Forno elétrico', 'Forno SpeedOver', 'Fritadeira elétrica', 'Fritadeira a gás',
         'Coifa', 'Exaustor', 'Micro-ondas', 'Panela de pressão industrial',
         'Caldeirão industrial', 'Máquina de cozinhar massas',
+        'Forno', 'Caldeira de frango', 'Fogão inox', 'Filtradora de óleo', 'Fritadeira',
     ],
     'Refrigeração e congelamento': [
         'Câmara fria', 'Câmara de congelamento', 'Geladeira industrial',
         'Refrigerador vertical', 'Freezer horizontal', 'Freezer vertical',
         'Balcão refrigerado', 'Mesa refrigerada', 'Expositor refrigerado',
         'Máquina de gelo', 'Unidade condensadora', 'Evaporador',
+        'Geladeira', 'Ultra congelador', 'Câmara congelada',
     ],
     'Processamento de alimentos': [
         'Processador de alimentos', 'Multiprocessador industrial', 'Cutter',
@@ -129,15 +131,22 @@ EQUIPAMENTO_TIPOS_PADRAO = {
         'Masseira', 'Cilindro de massas', 'Modeladora', 'Fatiador de frios',
         'Moedor de carne', 'Serra-fita', 'Amaciador de carne',
         'Descascador de legumes', 'Cortador de legumes', 'Espremedor de frutas',
+        'Mexerola de recheio', 'Batedeira', 'Liquidificador', 'Espremedor de limão',
+        'Mexer robot', 'Mexerola de panela', 'Processador de legumes',
+        'Ralador de queijo', 'Cortador de massas', 'Modeladora de pão', 'Boleadora',
+        'Máquina de salgados', 'Empanadeira', 'Processador de farinha',
+        'Processador de macarrão',
     ],
     'Conservação e embalagem': [
         'Seladora', 'Seladora a vácuo', 'Máquina de embalagem a vácuo',
         'Termoformadora', 'Embaladora', 'Datador', 'Etiquetadora', 'Balança',
         'Balança de precisão', 'Balança de plataforma',
+        'Embaladora de pizzas',
     ],
     'Lavagem e higienização': [
         'Máquina de lavar louças', 'Lava-louças industrial', 'Pia industrial',
         'Lavadora de utensílios', 'Esterilizador', 'Dosador de produtos químicos',
+        'Máquina de lavar chão', 'Tanque de imersão', 'Máquina de lavar roupas',
     ],
     'Apoio e armazenamento': [
         'Bancada de inox', 'Mesa de inox', 'Prateleira', 'Estante',
@@ -147,6 +156,7 @@ EQUIPAMENTO_TIPOS_PADRAO = {
     'Equipamentos elétricos e infraestrutura': [
         'Ar-condicionado', 'Climatizador', 'Ventilador industrial', 'Compressor',
         "Bomba d'água", 'Gerador', 'Nobreak', 'Quadro elétrico',
+        'Bebedouro', 'Luminária de inseto', 'Resistência', 'Ventilador',
     ],
 }
 

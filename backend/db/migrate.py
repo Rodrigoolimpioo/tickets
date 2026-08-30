@@ -361,21 +361,26 @@ def _seed_whatsapp_status(cursor):
 
 
 def _seed_equipamento_tipos(cursor):
-    # À parte de _seed_config pelo mesmo motivo de _seed_whatsapp_status:
-    # tabela nasceu depois, em base já com CONFIG_GERAL populado essa
-    # tabela ficaria vazia pra sempre se dependesse de _seed_config.
+    # Sempre roda (idempotente via WHERE NOT EXISTS, não só na primeira vez
+    # como as outras _seed_*) — permite acrescentar tipos novos à taxonomia
+    # depois do seed inicial (ex.: pedido do cliente) sem duplicar os que
+    # já existem nem exigir apagar a tabela.
     from core.config import EQUIPAMENTO_TIPOS_PADRAO
 
-    cursor.execute("SELECT COUNT(*) FROM EQUIPAMENTO_TIPOS")
-    if cursor.fetchone()[0] > 0:
-        return
     for categoria, tipos in EQUIPAMENTO_TIPOS_PADRAO.items():
         for tipo in tipos:
             cursor.execute(
-                "INSERT INTO EQUIPAMENTO_TIPOS (CATEGORIA, NOME) VALUES (:categoria, :nome)",
-                categoria=categoria, nome=tipo,
+                """
+                INSERT INTO EQUIPAMENTO_TIPOS (CATEGORIA, NOME)
+                SELECT :categoria, :nome FROM dual
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM EQUIPAMENTO_TIPOS
+                    WHERE CATEGORIA = :categoria2 AND NOME = :nome2
+                )
+                """,
+                categoria=categoria, nome=tipo, categoria2=categoria, nome2=tipo,
             )
-    logger.info('Taxonomia de tipos de equipamento semeada.')
+    logger.info('Taxonomia de tipos de equipamento sincronizada.')
 
 
 def _seed_users(cursor):
