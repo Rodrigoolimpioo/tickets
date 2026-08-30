@@ -186,6 +186,46 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
+/* SUBMENUS (Tickets / Manutenção) */
+.menu-group-toggle {
+  cursor: pointer;
+}
+
+.menu-group-toggle .submenu-caret {
+  margin-left: auto;
+  font-size: 11px;
+  transition: transform 0.2s;
+}
+
+.menu-group.open .menu-group-toggle .submenu-caret {
+  transform: rotate(180deg);
+}
+
+/* O grupo fica com destaque leve (não o mesmo box do item ativo) quando um
+   dos filhos está na página atual — evita competir visualmente com o
+   sub-item, que é quem de fato mostra onde o usuário está. */
+.sidebar-menu li a.menu-group-toggle.active {
+  background: transparent;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.submenu {
+  list-style: none;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.menu-group.open .submenu {
+  max-height: 200px;
+}
+
+.submenu li a {
+  padding: 9px 12px 9px 34px;
+  font-size: 13px;
+}
+
 .sidebar-footer {
   padding: 16px 12px;
   border-top: 1px solid rgba(255,255,255,0.06);

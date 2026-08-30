@@ -49,31 +49,60 @@
     <ul class="sidebar-menu">
       {% if session.role == 'admin' or 'dashboard' in g_permissoes %}
       <li>
-        <a href="{{ url_for('dashboard.dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">
+        <a href="{{ url_for('dashboard.dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard.dashboard' else '' }}">
           <i class="fa-solid fa-chart-pie"></i> Dashboard
         </a>
       </li>
       {% endif %}
-      {% if session.role == 'admin' or 'abrir_ticket' in g_permissoes %}
-      <li>
-        <a href="{{ url_for('tickets.abrir_ticket') }}" class="{{ 'active' if request.endpoint == 'abrir_ticket' else '' }}">
-          <i class="fa-solid fa-circle-plus"></i> Abrir Ticket
+      {% set tickets_ativo = request.endpoint in ['tickets.abrir_ticket', 'tickets.acompanhamento', 'tickets.ver_ticket'] %}
+      {% if session.role == 'admin' or 'abrir_ticket' in g_permissoes or 'acompanhamento' in g_permissoes %}
+      <li class="menu-group {{ 'open' if tickets_ativo else '' }}">
+        <a href="#" class="menu-group-toggle {{ 'active' if tickets_ativo else '' }}" data-submenu="submenuTickets">
+          <i class="fa-solid fa-ticket-simple"></i> Tickets
+          <i class="fa-solid fa-chevron-down submenu-caret"></i>
         </a>
+        <ul class="submenu" id="submenuTickets">
+          {% if session.role == 'admin' or 'abrir_ticket' in g_permissoes %}
+          <li>
+            <a href="{{ url_for('tickets.abrir_ticket') }}" class="{{ 'active' if request.endpoint == 'tickets.abrir_ticket' else '' }}">
+              <i class="fa-solid fa-circle-plus"></i> Abrir Ticket
+            </a>
+          </li>
+          {% endif %}
+          {% if session.role == 'admin' or 'acompanhamento' in g_permissoes %}
+          <li>
+            <a href="{{ url_for('tickets.acompanhamento') }}" class="{{ 'active' if request.endpoint in ['tickets.acompanhamento', 'tickets.ver_ticket'] else '' }}">
+              <i class="fa-solid fa-list-check"></i>
+              {% if session.role == 'funcionario' %}Meus Tickets{% else %}Acompanhamento{% endif %}
+            </a>
+          </li>
+          {% endif %}
+        </ul>
       </li>
       {% endif %}
-      {% if session.role == 'admin' or 'acompanhamento' in g_permissoes %}
-      <li>
-        <a href="{{ url_for('tickets.acompanhamento') }}" class="{{ 'active' if request.endpoint in ['acompanhamento', 'ver_ticket'] else '' }}">
-          <i class="fa-solid fa-list-check"></i>
-          {% if session.role == 'funcionario' %}Meus Tickets{% else %}Acompanhamento{% endif %}
-        </a>
-      </li>
-      {% endif %}
-      {% if session.role == 'admin' or 'manutencao_ver' in g_permissoes %}
-      <li>
-        <a href="{{ url_for('manutencao.manutencoes') }}" class="{{ 'active' if request.endpoint in ['manutencao.manutencoes', 'manutencao.ver_manutencao'] else '' }}">
+      {% set manutencao_ativo = request.endpoint in ['manutencao.manutencoes', 'manutencao.ver_manutencao', 'manutencao.nova_manutencao'] %}
+      {% if session.role == 'admin' or 'manutencao_ver' in g_permissoes or 'manutencao_gerenciar' in g_permissoes %}
+      <li class="menu-group {{ 'open' if manutencao_ativo else '' }}">
+        <a href="#" class="menu-group-toggle {{ 'active' if manutencao_ativo else '' }}" data-submenu="submenuManutencao">
           <i class="fa-solid fa-screwdriver-wrench"></i> Manutenção
+          <i class="fa-solid fa-chevron-down submenu-caret"></i>
         </a>
+        <ul class="submenu" id="submenuManutencao">
+          {% if session.role == 'admin' or 'manutencao_gerenciar' in g_permissoes %}
+          <li>
+            <a href="{{ url_for('manutencao.nova_manutencao') }}" class="{{ 'active' if request.endpoint == 'manutencao.nova_manutencao' else '' }}">
+              <i class="fa-solid fa-circle-plus"></i> Nova Manutenção
+            </a>
+          </li>
+          {% endif %}
+          {% if session.role == 'admin' or 'manutencao_ver' in g_permissoes %}
+          <li>
+            <a href="{{ url_for('manutencao.manutencoes') }}" class="{{ 'active' if request.endpoint in ['manutencao.manutencoes', 'manutencao.ver_manutencao'] else '' }}">
+              <i class="fa-solid fa-list-check"></i> Acompanhamento
+            </a>
+          </li>
+          {% endif %}
+        </ul>
       </li>
       {% endif %}
       {% if session.role == 'admin' or 'relatorios_ver' in g_permissoes %}
@@ -86,7 +115,7 @@
       {% if session.role == 'admin' %}
       <li class="menu-section">Administração</li>
       <li>
-        <a href="{{ url_for('config.configuracoes', tab='usuarios') }}" class="{{ 'active' if request.endpoint == 'configuracoes' else '' }}">
+        <a href="{{ url_for('config.configuracoes', tab='usuarios') }}" class="{{ 'active' if request.endpoint == 'config.configuracoes' else '' }}">
           <i class="fa-solid fa-gear"></i> Configurações
         </a>
       </li>
@@ -95,7 +124,7 @@
 
     <div class="sidebar-footer">
       {% if session.role == 'admin' or 'meu_perfil' in g_permissoes %}
-      <a href="{{ url_for('misc.meu_perfil') }}" class="footer-link {{ 'active' if request.endpoint == 'meu_perfil' else '' }}">
+      <a href="{{ url_for('misc.meu_perfil') }}" class="footer-link {{ 'active' if request.endpoint == 'misc.meu_perfil' else '' }}">
         <i class="fa-solid fa-user-gear"></i> Meu Perfil
       </a>
       {% endif %}

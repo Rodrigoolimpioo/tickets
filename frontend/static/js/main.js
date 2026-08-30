@@ -28,6 +28,14 @@ if (sidebarToggle && sidebar) {
   });
 }
 
+// Submenus do sidebar (Tickets / Manutenção)
+document.querySelectorAll('.menu-group-toggle').forEach((toggle) => {
+  toggle.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggle.closest('.menu-group').classList.toggle('open');
+  });
+});
+
 // Relógio de Brasília
 function atualizarRelogio() {
   const el = document.getElementById('relogio');
