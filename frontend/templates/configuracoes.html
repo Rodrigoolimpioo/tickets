@@ -338,7 +338,7 @@
       {% if cfg.ip_control.ips %}
       <div class="ip-list">
         {% for item in cfg.ip_control.ips %}
-        <div class="ip-item">
+        <div class="ip-item" id="ipView{{ loop.index }}">
           <div style="display:flex; align-items:center; gap:10px">
             <i class="fa-solid fa-circle-dot" style="color:var(--green); font-size:10px"></i>
             <code style="font-size:14px; font-weight:600">{{ item.ip }}</code>
@@ -349,14 +349,34 @@
             <span class="badge-status badge-aberto" style="font-size:10px">Você</span>
             {% endif %}
           </div>
-          <form method="POST" action="{{ url_for('config.cfg_ip_remover') }}" style="display:inline"
-                onsubmit="return confirm('Remover o IP {{ item.ip }}?')">
-            <input type="hidden" name="ip" value="{{ item.ip }}" />
-            <button type="submit" class="btn-acao btn-danger-sm" title="Remover IP">
-              <i class="fa-solid fa-trash"></i>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn-acao" title="Editar identificação"
+                    onclick="document.getElementById('ipView{{ loop.index }}').style.display='none';
+                             document.getElementById('ipEdit{{ loop.index }}').style.display='flex';">
+              <i class="fa-solid fa-pen"></i>
             </button>
-          </form>
+            <form method="POST" action="{{ url_for('config.cfg_ip_remover') }}" style="display:inline"
+                  onsubmit="return confirm('Remover o IP {{ item.ip }}?')">
+              <input type="hidden" name="ip" value="{{ item.ip }}" />
+              <button type="submit" class="btn-acao btn-danger-sm" title="Remover IP">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </form>
+          </div>
         </div>
+        <form method="POST" action="{{ url_for('config.cfg_ip_editar') }}" class="ip-item"
+              id="ipEdit{{ loop.index }}" style="display:none; gap:8px;">
+          <input type="hidden" name="ip" value="{{ item.ip }}" />
+          <code style="font-size:13px; font-weight:600; flex-shrink:0;">{{ item.ip }}</code>
+          <input type="text" name="nome" value="{{ item.nome }}" class="form-inp-sm"
+                 placeholder="Identificação (ex.: Escritório)" maxlength="100" style="flex:1" />
+          <button type="submit" class="btn-submit" style="padding:6px 14px; font-size:12px;">Salvar</button>
+          <button type="button" class="btn-cancel" style="padding:6px 14px; font-size:12px;"
+                  onclick="document.getElementById('ipEdit{{ loop.index }}').style.display='none';
+                           document.getElementById('ipView{{ loop.index }}').style.display='flex';">
+            Cancelar
+          </button>
+        </form>
         {% endfor %}
       </div>
       {% else %}

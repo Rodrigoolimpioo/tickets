@@ -99,6 +99,21 @@ def cfg_ip_adicionar():
     return redirect(url_for('config.configuracoes', tab='ips'))
 
 
+@config_bp.route('/configuracoes/ip/editar', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_ip_editar():
+    cfg = storage.load_config()
+    ip   = request.form.get('ip', '').strip()
+    nome = request.form.get('nome', '').strip()
+    item = next((i for i in cfg['ip_control']['ips'] if i['ip'] == ip), None)
+    if item:
+        item['nome'] = nome
+        storage.save_config(cfg)
+        log_evento('config_ip_editado', detalhes=f'{ip} ({nome})' if nome else ip)
+    return redirect(url_for('config.configuracoes', tab='ips'))
+
+
 @config_bp.route('/configuracoes/ip/remover', methods=['POST'])
 @login_required
 @role_required('admin')
