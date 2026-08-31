@@ -169,7 +169,10 @@ CREATE TABLE MANUTENCOES (
     EMPRESA             VARCHAR2(200),
     -- Preventiva ou Corretiva (ver core/config.TIPO_MANUTENCAO_LIST),
     -- definido na abertura da manutenção.
-    TIPO                VARCHAR2(30)
+    TIPO                VARCHAR2(30),
+    -- Data prevista pra próxima manutenção — só relevante quando TIPO =
+    -- 'Preventiva'; alimenta o alerta de vencimento no Dashboard.
+    PROXIMA_MANUTENCAO  DATE
 );
 
 CREATE TABLE MANUTENCAO_HISTORICO (

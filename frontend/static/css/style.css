@@ -678,6 +678,19 @@ body {
 }
 .badge-tipo-manutencao.badge-preventiva { background: var(--ticket-accent-light); color: var(--ticket-accent); }
 .badge-tipo-manutencao.badge-corretiva  { background: var(--manutencao-accent-light); color: var(--manutencao-accent); }
+
+/* Prazo da próxima manutenção preventiva */
+.badge-prazo {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-prazo-vencida { background: var(--red-light); color: var(--red); }
+.badge-prazo-proxima { background: var(--amber-light); color: var(--amber); }
+.badge-prazo-ok      { background: var(--green-light); color: var(--green); }
 .badge-fechado      { background: #f1f5f9; color: #475569; }
 .badge-incubado     { background: #f1f5f9; color: #475569; }
 

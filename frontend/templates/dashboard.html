@@ -236,7 +236,67 @@
       <div class="stat-label">Valor Total</div>
     </div>
   </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <a href="{{ url_for('manutencao.manutencoes', tipo='Preventiva') }}" class="stat-card stat-cancelada">
+      <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div class="stat-number">{{ manut_stats.preventivas_vencidas }}</div>
+      <div class="stat-label">Preventivas Vencidas</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <a href="{{ url_for('manutencao.manutencoes', tipo='Preventiva') }}" class="stat-card stat-andamento">
+      <div class="stat-icon"><i class="fa-solid fa-bell"></i></div>
+      <div class="stat-number">{{ manut_stats.preventivas_proximas }}</div>
+      <div class="stat-label">Preventivas em {{ preventiva_alerta_dias }} Dias</div>
+    </a>
+  </div>
 </div>
+
+<!-- ALERTA DE PREVENTIVAS -->
+{% if preventivas_alerta %}
+<div class="row g-3 mb-4">
+  <div class="col-12">
+    <div class="card-panel p-0">
+      <div class="card-panel-header" style="padding:16px 20px;">
+        <h5><i class="fa-solid fa-bell menu-icon-manutencao"></i> Preventivas Vencidas ou Vencendo em Breve</h5>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:110px">Nº</th>
+              <th>Equipamento</th>
+              <th style="width:150px">Unidade</th>
+              <th style="width:150px">Próxima Manutenção</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in preventivas_alerta %}
+            <tr onclick="window.location='{{ url_for('manutencao.ver_manutencao', manutencao_id=m.id) }}'" style="cursor:pointer">
+              <td><span class="manutencao-num">{{ m.numero }}</span></td>
+              <td>{{ m.equipamento_nome }}</td>
+              <td>{{ m.unidade }}</td>
+              <td>
+                <span class="badge-prazo badge-prazo-{{ m.proxima_status }}">
+                  {{ m.proxima_manutencao[8:10] }}/{{ m.proxima_manutencao[5:7] }}/{{ m.proxima_manutencao[0:4] }}
+                  {% if m.proxima_status == 'vencida' %}— vencida{% else %}— em breve{% endif %}
+                </span>
+              </td>
+              <td>
+                <a href="{{ url_for('manutencao.ver_manutencao', manutencao_id=m.id) }}" class="btn-acao">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <div class="row g-3">
   <!-- MANUTENÇÕES RECENTES -->

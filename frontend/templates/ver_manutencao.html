@@ -62,6 +62,17 @@
           <span class="detail-value">{{ manutencao.empresa }}</span>
         </div>
         {% endif %}
+        {% if manutencao.proxima_manutencao %}
+        <div class="detail-item">
+          <span class="detail-label">Próxima Manutenção Prevista</span>
+          <span class="detail-value">
+            <span class="badge-prazo badge-prazo-{{ proxima_status }}">
+              {{ manutencao.proxima_manutencao[8:10] }}/{{ manutencao.proxima_manutencao[5:7] }}/{{ manutencao.proxima_manutencao[0:4] }}
+              {% if proxima_status == 'vencida' %}— vencida{% elif proxima_status == 'proxima' %}— em breve{% endif %}
+            </span>
+          </span>
+        </div>
+        {% endif %}
         <div class="detail-item">
           <span class="detail-label">Aberto por</span>
           <span class="detail-value">{{ manutencao.criado_por }}</span>
@@ -200,6 +211,13 @@
                  placeholder="Ex.: 250,00"
                  value="{{ ('%.2f' | format(manutencao.valor) | replace('.', ',')) if manutencao.valor is not none else '' }}" />
         </div>
+        {% if manutencao.tipo == 'Preventiva' %}
+        <div class="form-group">
+          <label class="form-lbl-sm">Data da Próxima Manutenção (opcional)</label>
+          <input type="date" name="proxima_manutencao" class="form-inp-sm w-100"
+                 value="{{ manutencao.proxima_manutencao or '' }}" />
+        </div>
+        {% endif %}
         <div class="form-group">
           <label class="form-lbl-sm">Observação (opcional)</label>
           <textarea name="comentario" class="form-inp-sm" rows="2" maxlength="3900"

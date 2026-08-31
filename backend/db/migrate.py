@@ -58,6 +58,9 @@ _ALTER_STATEMENTS = [
     "ALTER TABLE MANUTENCOES ADD (EMPRESA VARCHAR2(200))",
     # Preventiva ou Corretiva, definido na abertura.
     "ALTER TABLE MANUTENCOES ADD (TIPO VARCHAR2(30))",
+    # Data prevista pra próxima manutenção — só relevante quando TIPO =
+    # 'Preventiva'; alimenta o alerta de vencimento no Dashboard.
+    "ALTER TABLE MANUTENCOES ADD (PROXIMA_MANUTENCAO DATE)",
     # Nome/identificação opcional pra cada IP autorizado (ex.: "Escritório",
     # "Casa do Rodrigo"), só pra facilitar reconhecer a lista depois.
     "ALTER TABLE IPS_PERMITIDOS ADD (NOME VARCHAR2(100))",
@@ -200,7 +203,8 @@ _DDL_STATEMENTS = [
         SERVICO_FEITO       VARCHAR2(2000 CHAR),
         TECNICO             VARCHAR2(200),
         EMPRESA             VARCHAR2(200),
-        TIPO                VARCHAR2(30)
+        TIPO                VARCHAR2(30),
+        PROXIMA_MANUTENCAO  DATE
     )
     """,
     """

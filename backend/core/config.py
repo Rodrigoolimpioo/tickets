@@ -53,6 +53,9 @@ STATUS_LIST_MANUTENCAO = ['Aberta', 'Em Andamento', 'Concluída', 'Cancelada']
 # Definido na abertura da manutenção — preventiva (agendada/rotineira) ou
 # corretiva (equipamento já apresentou defeito).
 TIPO_MANUTENCAO_LIST = ['Preventiva', 'Corretiva']
+# Quantos dias de antecedência antes da PROXIMA_MANUTENCAO já contam como
+# "vencendo em breve" no alerta do Dashboard.
+PREVENTIVA_ALERTA_DIAS = 7
 ROLES_VALIDOS = {'admin', 'supervisor', 'funcionario'}
 HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
 TIME_RE = re.compile(r'^(?:[01]\d|2[0-3]):[0-5]\d$')

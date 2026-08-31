@@ -1,15 +1,19 @@
 import base64
 import os
 import uuid
+from datetime import datetime
 
 from flask import Blueprint, redirect, render_template, request, session, url_for
 from werkzeug.utils import secure_filename
 
 from core import storage
 from core.audit import log_evento
-from core.config import HISTORICO_ACAO_MAX, STATUS_LIST_MANUTENCAO, TIPO_MANUTENCAO_LIST, UPLOADS_DIR
+from core.config import (
+    HISTORICO_ACAO_MAX, PREVENTIVA_ALERTA_DIAS, STATUS_LIST_MANUTENCAO,
+    TIPO_MANUTENCAO_LIST, UPLOADS_DIR,
+)
 from core.security import login_required, permission_required
-from core.time_utils import get_brasilia_time
+from core.time_utils import classificar_data_prevista, get_brasilia_time
 
 manutencao_bp = Blueprint('manutencao', __name__)
 
@@ -47,6 +51,7 @@ def manutencoes():
     equipamentos_por_id = {e['id']: e for e in storage.load_equipamentos()}
     for m in itens:
         m['equipamento_nome'] = equipamentos_por_id.get(m['equipamento_id'], {}).get('nome', '—')
+        m['proxima_status'] = classificar_data_prevista(m.get('proxima_manutencao'), PREVENTIVA_ALERTA_DIAS)
 
     itens = sorted(itens, key=lambda x: x.get('data_criacao', ''), reverse=True)
     return render_template('manutencoes.html', manutencoes=itens,
@@ -106,6 +111,7 @@ def nova_manutencao():
                 'tecnico': tecnico,
                 'empresa': empresa,
                 'tipo': tipo,
+                'proxima_manutencao': None,
                 'historico': [{'acao': f'Manutenção aberta ({tipo})', 'por': session['name'],
                                'data': now.strftime('%d/%m/%Y %H:%M:%S')}],
             }
@@ -130,8 +136,10 @@ def ver_manutencao(manutencao_id):
     if not manutencao or not _pode_ver(manutencao):
         return redirect(url_for('manutencao.manutencoes'))
     equipamento = next((e for e in storage.load_equipamentos() if e['id'] == manutencao['equipamento_id']), None)
+    proxima_status = classificar_data_prevista(manutencao.get('proxima_manutencao'), PREVENTIVA_ALERTA_DIAS)
     return render_template('ver_manutencao.html', manutencao=manutencao, equipamento=equipamento,
-                           status_list=STATUS_LIST_MANUTENCAO, erro=request.args.get('erro', ''))
+                           status_list=STATUS_LIST_MANUTENCAO, proxima_status=proxima_status,
+                           erro=request.args.get('erro', ''))
 
 
 @manutencao_bp.route('/manutencao/<manutencao_id>/atualizar', methods=['POST'])
@@ -146,6 +154,7 @@ def atualizar_manutencao(manutencao_id):
     comentario     = request.form.get('comentario', '').strip()
     servico_feito  = request.form.get('servico_feito', '').strip()
     valor_raw      = request.form.get('valor', '').strip().replace(',', '.')
+    proxima_raw    = request.form.get('proxima_manutencao', '').strip()
 
     # "Serviço Feito" é obrigatório pra concluir — não dá pra fechar uma
     # manutenção sem registrar o que foi feito (aceita o que já estava
@@ -166,6 +175,13 @@ def atualizar_manutencao(manutencao_id):
             try:
                 manutencao['valor'] = round(float(valor_raw), 2)
                 detalhes_extra.append(f"Valor: R$ {manutencao['valor']:.2f}".replace('.', ','))
+            except ValueError:
+                pass
+        if proxima_raw and manutencao.get('tipo') == 'Preventiva':
+            try:
+                data_proxima = datetime.strptime(proxima_raw, '%Y-%m-%d')
+                manutencao['proxima_manutencao'] = proxima_raw
+                detalhes_extra.append(f'Próxima manutenção: {data_proxima.strftime("%d/%m/%Y")}')
             except ValueError:
                 pass
 
