@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 
 from core import storage
 from core.audit import log_evento
-from core.config import HISTORICO_ACAO_MAX, STATUS_LIST_MANUTENCAO, UPLOADS_DIR
+from core.config import HISTORICO_ACAO_MAX, STATUS_LIST_MANUTENCAO, TIPO_MANUTENCAO_LIST, UPLOADS_DIR
 from core.security import login_required, permission_required
 from core.time_utils import get_brasilia_time
 
@@ -33,10 +33,12 @@ def manutencoes():
 
     filtro_status  = request.args.get('status', '')
     filtro_unidade = request.args.get('unidade', '')
+    filtro_tipo    = request.args.get('tipo', '')
     busca          = request.args.get('busca', '').strip().lower()
 
     if filtro_status:  itens = [m for m in itens if m['status'] == filtro_status]
     if filtro_unidade: itens = [m for m in itens if m.get('unidade') == filtro_unidade]
+    if filtro_tipo:    itens = [m for m in itens if m.get('tipo') == filtro_tipo]
     if busca:          itens = [m for m in itens if
                                 busca in m.get('numero', '').lower() or
                                 busca in m.get('descricao', '').lower() or
@@ -49,7 +51,8 @@ def manutencoes():
     itens = sorted(itens, key=lambda x: x.get('data_criacao', ''), reverse=True)
     return render_template('manutencoes.html', manutencoes=itens,
                            unidades=storage.get_unidades(), status_list=STATUS_LIST_MANUTENCAO,
-                           filtro_status=filtro_status, filtro_unidade=filtro_unidade, busca=busca)
+                           tipo_list=TIPO_MANUTENCAO_LIST, filtro_status=filtro_status,
+                           filtro_unidade=filtro_unidade, filtro_tipo=filtro_tipo, busca=busca)
 
 
 @manutencao_bp.route('/manutencoes/nova', methods=['GET', 'POST'])
@@ -67,9 +70,10 @@ def nova_manutencao():
         responsavel_id = request.form.get('responsavel_id', '') or None
         tecnico        = request.form.get('tecnico', '').strip()
         empresa        = request.form.get('empresa', '').strip()
+        tipo           = request.form.get('tipo', '')
 
         equipamento = next((e for e in equipamentos if e['id'] == equipamento_id), None)
-        if not equipamento or not unidade or not descricao:
+        if not equipamento or not unidade or not descricao or tipo not in TIPO_MANUTENCAO_LIST:
             error = 'Preencha todos os campos obrigatórios.'
         else:
             foto_info = None
@@ -101,7 +105,8 @@ def nova_manutencao():
                 'servico_feito': '',
                 'tecnico': tecnico,
                 'empresa': empresa,
-                'historico': [{'acao': 'Manutenção aberta', 'por': session['name'],
+                'tipo': tipo,
+                'historico': [{'acao': f'Manutenção aberta ({tipo})', 'por': session['name'],
                                'data': now.strftime('%d/%m/%Y %H:%M:%S')}],
             }
             itens = storage.load_manutencoes()
@@ -112,7 +117,8 @@ def nova_manutencao():
             return redirect(url_for('manutencao.ver_manutencao', manutencao_id=manutencao['id']))
 
     return render_template('abrir_manutencao.html', equipamentos=equipamentos, usuarios=usuarios,
-                           unidades=storage.get_unidades(), tecnicos=storage.get_tecnicos(), error=error)
+                           unidades=storage.get_unidades(), tecnicos=storage.get_tecnicos(),
+                           tipo_list=TIPO_MANUTENCAO_LIST, error=error)
 
 
 @manutencao_bp.route('/manutencao/<manutencao_id>')

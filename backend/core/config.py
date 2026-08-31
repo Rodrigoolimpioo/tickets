@@ -50,6 +50,9 @@ STATUS_LIST = ['Aberto', 'Em Andamento', 'Resolvido', 'Incubado']
 # DATA_FECHAMENTO (tempo de fechamento no relatório de tickets).
 STATUS_TICKET_FECHADOS = {'Resolvido', 'Incubado'}
 STATUS_LIST_MANUTENCAO = ['Aberta', 'Em Andamento', 'Concluída', 'Cancelada']
+# Definido na abertura da manutenção — preventiva (agendada/rotineira) ou
+# corretiva (equipamento já apresentou defeito).
+TIPO_MANUTENCAO_LIST = ['Preventiva', 'Corretiva']
 ROLES_VALIDOS = {'admin', 'supervisor', 'funcionario'}
 HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
 TIME_RE = re.compile(r'^(?:[01]\d|2[0-3]):[0-5]\d$')

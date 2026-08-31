@@ -28,6 +28,23 @@
       <form method="POST" action="{{ url_for('manutencao.nova_manutencao') }}"
             enctype="multipart/form-data" id="formManutencao">
 
+        <!-- TIPO DE MANUTENÇÃO -->
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-tags"></i> Tipo de Manutenção <span class="req">*</span>
+          </label>
+          <select name="tipo" class="form-inp form-sel" required>
+            <option value="">— Selecione o tipo —</option>
+            {% for t in tipo_list %}
+            <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-hint">
+            <i class="fa-solid fa-circle-info"></i>
+            Preventiva: manutenção agendada/rotineira. Corretiva: o equipamento já apresentou defeito.
+          </div>
+        </div>
+
         <!-- EQUIPAMENTO -->
         <div class="form-group">
           <label class="form-lbl">

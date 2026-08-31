@@ -1,7 +1,7 @@
 from flask import Blueprint, Response, render_template, request, session
 
 from core import reports, storage
-from core.config import STATUS_LIST, STATUS_LIST_MANUTENCAO
+from core.config import STATUS_LIST, STATUS_LIST_MANUTENCAO, TIPO_MANUTENCAO_LIST
 from core.security import login_required, permission_required
 
 relatorios_bp = Blueprint('relatorios', __name__)
@@ -29,6 +29,7 @@ def _filtrar_manutencoes(args):
     equipamento_id = args.get('equipamento_id', '')
     status = args.get('status', '')
     responsavel_id = args.get('responsavel_id', '')
+    tipo = args.get('tipo', '')
 
     if inicio or fim:
         itens = [m for m in itens if _dentro_periodo(m['data_criacao'], inicio, fim)]
@@ -36,6 +37,7 @@ def _filtrar_manutencoes(args):
     if equipamento_id: itens = [m for m in itens if m.get('equipamento_id') == equipamento_id]
     if status:         itens = [m for m in itens if m.get('status') == status]
     if responsavel_id: itens = [m for m in itens if m.get('responsavel_id') == responsavel_id]
+    if tipo:           itens = [m for m in itens if m.get('tipo') == tipo]
 
     equipamentos_por_id = {e['id']: e for e in storage.load_equipamentos()}
     for m in itens:
@@ -64,7 +66,7 @@ def _filtrar_tickets(args):
 
 
 _COLUNAS_MANUTENCOES = [
-    ('numero', 'Número'), ('equipamento_nome', 'Máquinario'), ('unidade', 'Unidade'),
+    ('numero', 'Número'), ('tipo', 'Tipo'), ('equipamento_nome', 'Máquinario'), ('unidade', 'Unidade'),
     ('status', 'Status'), ('responsavel_nome', 'Responsável'), ('tecnico', 'Técnico'),
     ('empresa', 'Empresa'), ('descricao', 'Motivo'),
     ('servico_feito', 'Serviço Feito'), ('valor_formatado', 'Valor R$'),
@@ -89,6 +91,7 @@ def relatorios():
         'relatorios.html', aba=aba, manutencoes=manutencoes, tickets=tickets,
         unidades=storage.get_unidades(), equipamentos=storage.load_equipamentos(),
         usuarios=storage.load_users(), status_list_manutencao=STATUS_LIST_MANUTENCAO,
+        tipo_list_manutencao=TIPO_MANUTENCAO_LIST,
         status_list_ticket=STATUS_LIST, filtros=request.args,
     )
 

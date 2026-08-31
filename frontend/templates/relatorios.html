@@ -73,6 +73,15 @@
           {% endfor %}
         </select>
       </div>
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-tags"></i> Tipo</label>
+        <select name="tipo" class="form-inp-sm form-sel-sm">
+          <option value="">Todos</option>
+          {% for t in tipo_list_manutencao %}
+          <option value="{{ t }}" {{ 'selected' if filtros.get('tipo') == t }}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
       {% else %}
       <div class="filtro-item">
         <label class="form-lbl-sm"><i class="fa-solid fa-circle-half-stroke"></i> Status</label>
@@ -113,6 +122,7 @@
         <thead>
           <tr>
             <th style="width:110px">Nº</th>
+            <th style="width:100px">Tipo</th>
             <th>Máquinario</th>
             <th style="width:150px">Unidade</th>
             <th style="width:130px">Status</th>
@@ -125,6 +135,13 @@
           {% for m in manutencoes %}
           <tr onclick="window.location='{{ url_for('manutencao.ver_manutencao', manutencao_id=m.id) }}'" style="cursor:pointer">
             <td><span class="manutencao-num">{{ m.numero }}</span></td>
+            <td>
+              {% if m.tipo %}
+              <span class="badge-tipo-manutencao badge-{{ m.tipo | lower }}">{{ m.tipo }}</span>
+              {% else %}
+              —
+              {% endif %}
+            </td>
             <td>{{ m.equipamento_nome }}</td>
             <td>{{ m.unidade }}</td>
             <td>

@@ -30,6 +30,7 @@ def _manutencao_to_dict(row: dict, historico: list) -> dict:
         'servico_feito': row.get('servico_feito') or '',
         'tecnico': row.get('tecnico') or '',
         'empresa': row.get('empresa') or '',
+        'tipo': row.get('tipo') or '',
         'historico': historico,
     }
 
@@ -40,7 +41,7 @@ def list_manutencoes() -> list:
             """
             SELECT ID, NUMERO, EQUIPAMENTO_ID, UNIDADE, RESPONSAVEL_ID, RESPONSAVEL_NOME,
                    DESCRICAO, DATA_CRIACAO, STATUS, CRIADO_POR, CRIADO_POR_ID, ASSINATURA_FILENAME,
-                   FOTO_FILENAME, FOTO_ORIGINAL_NAME, VALOR, SERVICO_FEITO, TECNICO, EMPRESA
+                   FOTO_FILENAME, FOTO_ORIGINAL_NAME, VALOR, SERVICO_FEITO, TECNICO, EMPRESA, TIPO
             FROM MANUTENCOES
             """
         )
@@ -97,15 +98,15 @@ def save_manutencoes(manutencoes: list) -> None:
                     ASSINATURA_FILENAME = :assinatura_filename,
                     FOTO_FILENAME = :foto_filename, FOTO_ORIGINAL_NAME = :foto_original_name,
                     VALOR = :valor, SERVICO_FEITO = :servico_feito,
-                    TECNICO = :tecnico, EMPRESA = :empresa
+                    TECNICO = :tecnico, EMPRESA = :empresa, TIPO = :tipo
                 WHEN NOT MATCHED THEN INSERT (
                     ID, NUMERO, EQUIPAMENTO_ID, UNIDADE, RESPONSAVEL_ID, RESPONSAVEL_NOME,
                     DESCRICAO, DATA_CRIACAO, STATUS, CRIADO_POR, CRIADO_POR_ID, ASSINATURA_FILENAME,
-                    FOTO_FILENAME, FOTO_ORIGINAL_NAME, VALOR, SERVICO_FEITO, TECNICO, EMPRESA
+                    FOTO_FILENAME, FOTO_ORIGINAL_NAME, VALOR, SERVICO_FEITO, TECNICO, EMPRESA, TIPO
                 ) VALUES (
                     :id, :numero, :equipamento_id, :unidade, :responsavel_id, :responsavel_nome,
                     :descricao, :data_criacao, :status, :criado_por, :criado_por_id, :assinatura_filename,
-                    :foto_filename, :foto_original_name, :valor, :servico_feito, :tecnico, :empresa
+                    :foto_filename, :foto_original_name, :valor, :servico_feito, :tecnico, :empresa, :tipo
                 )
                 """,
                 id=m['id'], numero=m['numero'], equipamento_id=m['equipamento_id'],
@@ -117,6 +118,7 @@ def save_manutencoes(manutencoes: list) -> None:
                 foto_original_name=(m.get('foto_equipamento') or {}).get('original_name'),
                 valor=m.get('valor'), servico_feito=m.get('servico_feito') or None,
                 tecnico=m.get('tecnico') or None, empresa=m.get('empresa') or None,
+                tipo=m.get('tipo') or None,
             )
 
         if ids_atuais:

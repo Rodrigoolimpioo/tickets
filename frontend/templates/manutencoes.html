@@ -41,11 +41,20 @@
           {% endfor %}
         </select>
       </div>
+      <div class="filtro-item">
+        <label class="form-lbl-sm"><i class="fa-solid fa-tags"></i> Tipo</label>
+        <select name="tipo" class="form-inp-sm form-sel-sm">
+          <option value="">Todos</option>
+          {% for t in tipo_list %}
+          <option value="{{ t }}" {{ 'selected' if filtro_tipo == t }}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
       <div class="filtro-item align-self-end">
         <button type="submit" class="btn-filtrar">
           <i class="fa-solid fa-filter"></i> Filtrar
         </button>
-        {% if busca or filtro_status or filtro_unidade %}
+        {% if busca or filtro_status or filtro_unidade or filtro_tipo %}
         <a href="{{ url_for('manutencao.manutencoes') }}" class="btn-limpar">
           <i class="fa-solid fa-xmark"></i>
         </a>
@@ -65,6 +74,7 @@
           <th style="width:110px">Nº</th>
           <th>Equipamento</th>
           <th style="width:150px">Unidade</th>
+          <th style="width:100px">Tipo</th>
           <th style="width:130px">Status</th>
           <th style="width:150px">Responsável</th>
           <th style="width:110px">Valor R$</th>
@@ -80,6 +90,13 @@
             <div class="ticket-ocorrencia-preview">{{ m.descricao[:80] }}{% if m.descricao | length > 80 %}...{% endif %}</div>
           </td>
           <td>{{ m.unidade }}</td>
+          <td>
+            {% if m.tipo %}
+            <span class="badge-tipo-manutencao badge-{{ m.tipo | lower }}">{{ m.tipo }}</span>
+            {% else %}
+            —
+            {% endif %}
+          </td>
           <td>
             <span class="badge-status badge-{{ m.status | lower | replace(' ', '-') }}">
               {{ m.status }}

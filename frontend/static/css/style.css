@@ -667,6 +667,17 @@ body {
 .badge-aberto       { background: #e5e5e5; color: #111111; }
 .badge-em-andamento { background: #fef3c7; color: #b45309; }
 .badge-resolvido    { background: #dcfce7; color: #15803d; }
+
+.badge-tipo-manutencao {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-tipo-manutencao.badge-preventiva { background: var(--ticket-accent-light); color: var(--ticket-accent); }
+.badge-tipo-manutencao.badge-corretiva  { background: var(--manutencao-accent-light); color: var(--manutencao-accent); }
 .badge-fechado      { background: #f1f5f9; color: #475569; }
 .badge-incubado     { background: #f1f5f9; color: #475569; }
 

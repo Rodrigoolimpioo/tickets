@@ -56,6 +56,8 @@ _ALTER_STATEMENTS = [
     # RESPONSAVEL (usuário interno do sistema que abriu/acompanha).
     "ALTER TABLE MANUTENCOES ADD (TECNICO VARCHAR2(200))",
     "ALTER TABLE MANUTENCOES ADD (EMPRESA VARCHAR2(200))",
+    # Preventiva ou Corretiva, definido na abertura.
+    "ALTER TABLE MANUTENCOES ADD (TIPO VARCHAR2(30))",
     # Nome/identificação opcional pra cada IP autorizado (ex.: "Escritório",
     # "Casa do Rodrigo"), só pra facilitar reconhecer a lista depois.
     "ALTER TABLE IPS_PERMITIDOS ADD (NOME VARCHAR2(100))",
@@ -197,7 +199,8 @@ _DDL_STATEMENTS = [
         VALOR               NUMBER(10,2),
         SERVICO_FEITO       VARCHAR2(2000 CHAR),
         TECNICO             VARCHAR2(200),
-        EMPRESA             VARCHAR2(200)
+        EMPRESA             VARCHAR2(200),
+        TIPO                VARCHAR2(30)
     )
     """,
     """

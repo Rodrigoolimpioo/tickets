@@ -166,7 +166,10 @@ CREATE TABLE MANUTENCOES (
     -- Técnico/empresa terceirizada que executou o serviço — texto livre,
     -- diferente de RESPONSAVEL (usuário interno do sistema).
     TECNICO             VARCHAR2(200),
-    EMPRESA             VARCHAR2(200)
+    EMPRESA             VARCHAR2(200),
+    -- Preventiva ou Corretiva (ver core/config.TIPO_MANUTENCAO_LIST),
+    -- definido na abertura da manutenção.
+    TIPO                VARCHAR2(30)
 );
 
 CREATE TABLE MANUTENCAO_HISTORICO (

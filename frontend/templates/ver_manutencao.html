@@ -11,6 +11,11 @@
       <span class="badge-status badge-{{ manutencao.status | lower | replace(' ', '-') }}" style="font-size:14px; padding:6px 14px;">
         {{ manutencao.status }}
       </span>
+      {% if manutencao.tipo %}
+      <span class="badge-tipo-manutencao badge-{{ manutencao.tipo | lower }}" style="font-size:14px; padding:6px 14px;">
+        {{ manutencao.tipo }}
+      </span>
+      {% endif %}
     </div>
     <p class="page-subtitle mt-1">{{ equipamento.nome if equipamento else 'Equipamento removido' }}</p>
   </div>
