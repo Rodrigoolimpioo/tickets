@@ -65,7 +65,8 @@ def _filtrar_tickets(args):
 
 _COLUNAS_MANUTENCOES = [
     ('numero', 'Número'), ('equipamento_nome', 'Máquinario'), ('unidade', 'Unidade'),
-    ('status', 'Status'), ('responsavel_nome', 'Responsável'), ('descricao', 'Motivo'),
+    ('status', 'Status'), ('responsavel_nome', 'Responsável'), ('tecnico', 'Técnico'),
+    ('empresa', 'Empresa'), ('descricao', 'Motivo'),
     ('servico_feito', 'Serviço Feito'), ('valor_formatado', 'Valor R$'),
     ('criado_por', 'Aberto por'), ('data_formatada', 'Data'),
 ]

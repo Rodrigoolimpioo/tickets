@@ -69,6 +69,29 @@
           </select>
         </div>
 
+        <!-- TÉCNICO -->
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-user-gear"></i> Técnico <span class="opcional">— opcional</span>
+          </label>
+          <input type="text" name="tecnico" class="form-inp" list="tecnicosList"
+                 placeholder="Nome do técnico que vai executar o serviço" maxlength="200" />
+          <datalist id="tecnicosList">
+            {% for t in tecnicos %}
+            <option value="{{ t }}"></option>
+            {% endfor %}
+          </datalist>
+        </div>
+
+        <!-- EMPRESA -->
+        <div class="form-group">
+          <label class="form-lbl">
+            <i class="fa-solid fa-building"></i> Empresa <span class="opcional">— opcional</span>
+          </label>
+          <input type="text" name="empresa" class="form-inp"
+                 placeholder="Empresa terceirizada responsável pelo serviço" maxlength="200" />
+        </div>
+
         <!-- MOTIVO DA ABERTURA -->
         <div class="form-group">
           <label class="form-lbl">

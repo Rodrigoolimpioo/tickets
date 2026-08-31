@@ -146,7 +146,7 @@ def check_access_controls():
     ip_cfg = cfg.get('ip_control', {})
     if ip_cfg.get('enabled', False) and session.get('role') != 'admin':
         client_ip = get_client_ip()
-        allowed = ip_cfg.get('ips', [])
+        allowed = [item['ip'] for item in ip_cfg.get('ips', [])]
         if allowed and client_ip not in allowed:
             session.clear()
             return deny_response('ip', ip=client_ip)

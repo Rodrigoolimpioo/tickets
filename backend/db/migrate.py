@@ -52,6 +52,13 @@ _ALTER_STATEMENTS = [
     "ALTER TABLE MANUTENCOES ADD (FOTO_ORIGINAL_NAME VARCHAR2(500))",
     "ALTER TABLE MANUTENCOES ADD (VALOR NUMBER(10,2))",
     "ALTER TABLE MANUTENCOES ADD (SERVICO_FEITO VARCHAR2(2000 CHAR))",
+    # Técnico/empresa terceirizada que executou o serviço — diferente de
+    # RESPONSAVEL (usuário interno do sistema que abriu/acompanha).
+    "ALTER TABLE MANUTENCOES ADD (TECNICO VARCHAR2(200))",
+    "ALTER TABLE MANUTENCOES ADD (EMPRESA VARCHAR2(200))",
+    # Nome/identificação opcional pra cada IP autorizado (ex.: "Escritório",
+    # "Casa do Rodrigo"), só pra facilitar reconhecer a lista depois.
+    "ALTER TABLE IPS_PERMITIDOS ADD (NOME VARCHAR2(100))",
 ]
 
 _DDL_STATEMENTS = [
@@ -129,7 +136,7 @@ _DDL_STATEMENTS = [
         WHATSAPP_ENABLED         NUMBER(1)     DEFAULT 0 NOT NULL
     )
     """,
-    "CREATE TABLE IPS_PERMITIDOS (IP VARCHAR2(45) PRIMARY KEY)",
+    "CREATE TABLE IPS_PERMITIDOS (IP VARCHAR2(45) PRIMARY KEY, NOME VARCHAR2(100))",
     """
     CREATE TABLE WHATSAPP_STATUS_CONFIG (
         STATUS    VARCHAR2(30)   PRIMARY KEY,
@@ -148,6 +155,10 @@ _DDL_STATEMENTS = [
     """,
     "CREATE TABLE SISTEMAS (NOME VARCHAR2(100) PRIMARY KEY)",
     "CREATE TABLE UNIDADES (NOME VARCHAR2(100) PRIMARY KEY)",
+    # Cadastro prévio de técnicos externos — mesmo padrão sem FK de
+    # SISTEMAS/UNIDADES (lista de referência simples), usado como opções
+    # padrão no campo "Técnico" da manutenção.
+    "CREATE TABLE TECNICOS (NOME VARCHAR2(200) PRIMARY KEY)",
     """
     CREATE TABLE EQUIPAMENTO_TIPOS (
         CATEGORIA VARCHAR2(100) NOT NULL,
@@ -184,7 +195,9 @@ _DDL_STATEMENTS = [
         FOTO_FILENAME       VARCHAR2(500),
         FOTO_ORIGINAL_NAME  VARCHAR2(500),
         VALOR               NUMBER(10,2),
-        SERVICO_FEITO       VARCHAR2(2000 CHAR)
+        SERVICO_FEITO       VARCHAR2(2000 CHAR),
+        TECNICO             VARCHAR2(200),
+        EMPRESA             VARCHAR2(200)
     )
     """,
     """

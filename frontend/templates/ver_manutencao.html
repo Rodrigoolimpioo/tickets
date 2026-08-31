@@ -31,7 +31,7 @@
       <div class="ticket-detail-grid">
         <div class="detail-item">
           <span class="detail-label">Número</span>
-          <span class="detail-value ticket-num">{{ manutencao.numero }}</span>
+          <span class="detail-value manutencao-num">{{ manutencao.numero }}</span>
         </div>
         <div class="detail-item">
           <span class="detail-label">Equipamento</span>
@@ -45,6 +45,18 @@
           <span class="detail-label">Responsável</span>
           <span class="detail-value">{{ manutencao.responsavel_nome or '—' }}</span>
         </div>
+        {% if manutencao.tecnico %}
+        <div class="detail-item">
+          <span class="detail-label">Técnico</span>
+          <span class="detail-value">{{ manutencao.tecnico }}</span>
+        </div>
+        {% endif %}
+        {% if manutencao.empresa %}
+        <div class="detail-item">
+          <span class="detail-label">Empresa</span>
+          <span class="detail-value">{{ manutencao.empresa }}</span>
+        </div>
+        {% endif %}
         <div class="detail-item">
           <span class="detail-label">Aberto por</span>
           <span class="detail-value">{{ manutencao.criado_por }}</span>

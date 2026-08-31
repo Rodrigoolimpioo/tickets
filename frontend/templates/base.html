@@ -61,7 +61,7 @@
       {% if session.role == 'admin' or 'abrir_ticket' in g_permissoes or 'acompanhamento' in g_permissoes %}
       <li class="menu-group {{ 'open' if tickets_ativo else '' }}">
         <a href="#" class="menu-group-toggle {{ 'active' if tickets_ativo else '' }}" data-submenu="submenuTickets">
-          <i class="fa-solid fa-ticket-simple"></i> Tickets
+          <i class="fa-solid fa-ticket-simple menu-icon-ticket"></i> Tickets
           <i class="fa-solid fa-chevron-down submenu-caret"></i>
         </a>
         <ul class="submenu" id="submenuTickets">
@@ -87,7 +87,7 @@
       {% if session.role == 'admin' or 'manutencao_ver' in g_permissoes or 'manutencao_gerenciar' in g_permissoes %}
       <li class="menu-group {{ 'open' if manutencao_ativo else '' }}">
         <a href="#" class="menu-group-toggle {{ 'active' if manutencao_ativo else '' }}" data-submenu="submenuManutencao">
-          <i class="fa-solid fa-screwdriver-wrench"></i> Manutenção
+          <i class="fa-solid fa-screwdriver-wrench menu-icon-manutencao"></i> Manutenção
           <i class="fa-solid fa-chevron-down submenu-caret"></i>
         </a>
         <ul class="submenu" id="submenuManutencao">

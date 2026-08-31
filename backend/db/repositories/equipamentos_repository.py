@@ -38,6 +38,7 @@ def list_equipamentos() -> list:
             """
             SELECT ID, NOME, CATEGORIA, TIPO, UNIDADE, NUMERO_SERIE, ATIVO, DATA_CADASTRO
             FROM EQUIPAMENTOS
+            ORDER BY NOME
             """
         )
         rows = rows_to_dicts(cursor)

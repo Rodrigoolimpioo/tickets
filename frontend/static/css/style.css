@@ -15,6 +15,14 @@
   --border: #e2e8f0;
   --blue: #111111;
   --blue-light: #f0f0f0;
+  /* Fixas (não seguem a cor de marca customizável em Personalização) —
+     usadas só pra diferenciar visualmente Ticket (azul) de Manutenção
+     (vermelho) de forma consistente, mesmo se o cliente trocar a cor do
+     botão. */
+  --ticket-accent: #2563eb;
+  --ticket-accent-light: #eff6ff;
+  --manutencao-accent: #dc2626;
+  --manutencao-accent-light: #fef2f2;
   --green: #16a34a;
   --green-light: #f0fdf4;
   --amber: #d97706;
@@ -228,6 +236,11 @@ body {
   font-size: 13px;
 }
 
+/* Diferenciação visual Ticket (azul) / Manutenção (vermelho) no ícone
+   do grupo no menu — mesmas cores fixas de .ticket-num/.manutencao-num. */
+.menu-icon-ticket { color: var(--ticket-accent); }
+.menu-icon-manutencao { color: var(--manutencao-accent); }
+
 .sidebar-footer {
   padding: 16px 12px;
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -400,6 +413,10 @@ body {
 .stat-incubado .stat-number { color: var(--gray); }
 .stat-novo .stat-icon { color: #333333; }
 .stat-novo .stat-number { color: #333333; }
+.stat-concluida .stat-icon { color: var(--green); }
+.stat-concluida .stat-number { color: var(--green); }
+.stat-cancelada .stat-icon { color: var(--manutencao-accent); }
+.stat-cancelada .stat-number { color: var(--manutencao-accent); }
 
 /* ===== CARD PANEL ===== */
 .card-panel {
@@ -481,8 +498,19 @@ body {
   font-family: 'Courier New', monospace;
   font-size: 13px;
   font-weight: 700;
-  color: var(--blue);
-  background: var(--blue-light);
+  color: var(--ticket-accent);
+  background: var(--ticket-accent-light);
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.manutencao-num {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--manutencao-accent);
+  background: var(--manutencao-accent-light);
   padding: 3px 8px;
   border-radius: 6px;
   white-space: nowrap;
@@ -739,6 +767,8 @@ body {
 .fill-andamento { background: #f59e0b; }
 .fill-resolvido { background: #22c55e; }
 .fill-incubado  { background: #94a3b8; }
+.fill-concluida { background: #22c55e; }
+.fill-cancelada { background: var(--manutencao-accent); }
 
 /* ===== COMENTÁRIO COM FOTO ===== */
 .btn-anexar-comentario {

@@ -76,8 +76,9 @@ def cfg_ip_toggle():
     # adiciona o IP de quem fez a requisição se ele ainda não estiver na lista.
     if ligando:
         client_ip = get_client_ip()
-        if client_ip not in cfg['ip_control']['ips']:
-            cfg['ip_control']['ips'].append(client_ip)
+        ips_atuais = [item['ip'] for item in cfg['ip_control']['ips']]
+        if client_ip not in ips_atuais:
+            cfg['ip_control']['ips'].append({'ip': client_ip, 'nome': ''})
     storage.save_config(cfg)
     log_evento('config_ip_ativado' if ligando else 'config_ip_desativado')
     return redirect(url_for('config.configuracoes', tab='ips'))
@@ -88,11 +89,13 @@ def cfg_ip_toggle():
 @role_required('admin')
 def cfg_ip_adicionar():
     cfg = storage.load_config()
-    ip  = request.form.get('ip', '').strip()
-    if ip and valid_ip(ip) and ip not in cfg['ip_control']['ips']:
-        cfg['ip_control']['ips'].append(ip)
+    ip   = request.form.get('ip', '').strip()
+    nome = request.form.get('nome', '').strip()
+    ips_atuais = [item['ip'] for item in cfg['ip_control']['ips']]
+    if ip and valid_ip(ip) and ip not in ips_atuais:
+        cfg['ip_control']['ips'].append({'ip': ip, 'nome': nome})
         storage.save_config(cfg)
-        log_evento('config_ip_adicionado', detalhes=ip)
+        log_evento('config_ip_adicionado', detalhes=f'{ip} ({nome})' if nome else ip)
     return redirect(url_for('config.configuracoes', tab='ips'))
 
 
@@ -102,8 +105,9 @@ def cfg_ip_adicionar():
 def cfg_ip_remover():
     cfg = storage.load_config()
     ip  = request.form.get('ip', '').strip()
-    if ip in cfg['ip_control']['ips']:
-        cfg['ip_control']['ips'].remove(ip)
+    ips_atuais = [item['ip'] for item in cfg['ip_control']['ips']]
+    if ip in ips_atuais:
+        cfg['ip_control']['ips'] = [item for item in cfg['ip_control']['ips'] if item['ip'] != ip]
         storage.save_config(cfg)
         log_evento('config_ip_removido', detalhes=ip)
     return redirect(url_for('config.configuracoes', tab='ips'))
@@ -194,6 +198,34 @@ def cfg_unidade_remover():
         storage.save_config(cfg)
         log_evento('config_unidade_removida', detalhes=nome)
     return redirect(url_for('config.configuracoes', tab='unidades', msg='unidade_removida'))
+
+
+# ── Técnicos ───────────────────────────────
+
+@config_bp.route('/configuracoes/tecnico/adicionar', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_tecnico_adicionar():
+    cfg = storage.load_config()
+    nome = request.form.get('nome', '').strip()
+    if nome and nome not in cfg['tecnicos']:
+        cfg['tecnicos'].append(nome)
+        storage.save_config(cfg)
+        log_evento('config_tecnico_adicionado', detalhes=nome)
+    return redirect(url_for('config.configuracoes', tab='tecnicos', msg='tecnico_adicionado'))
+
+
+@config_bp.route('/configuracoes/tecnico/remover', methods=['POST'])
+@login_required
+@role_required('admin')
+def cfg_tecnico_remover():
+    cfg = storage.load_config()
+    nome = request.form.get('nome', '').strip()
+    if nome in cfg['tecnicos']:
+        cfg['tecnicos'].remove(nome)
+        storage.save_config(cfg)
+        log_evento('config_tecnico_removido', detalhes=nome)
+    return redirect(url_for('config.configuracoes', tab='tecnicos', msg='tecnico_removido'))
 
 
 # ── Equipamentos ──────────────────────────

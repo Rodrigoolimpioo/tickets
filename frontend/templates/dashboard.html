@@ -4,11 +4,26 @@
 {% block content %}
 <div class="page-header">
   <h2 class="page-title"><i class="fa-solid fa-chart-pie"></i> Dashboard</h2>
-  <p class="page-subtitle">Visão geral dos tickets
+  <p class="page-subtitle">Visão geral
     {% if session.role == 'funcionario' %}— seus chamados{% endif %}
   </p>
 </div>
 
+<!-- ABAS -->
+<div class="cfg-tabs mb-3">
+  <a href="{{ url_for('dashboard.dashboard', tab='tickets') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'tickets' else '' }}">
+    <i class="fa-solid fa-ticket-simple menu-icon-ticket"></i> Tickets
+  </a>
+  {% if pode_ver_manutencao %}
+  <a href="{{ url_for('dashboard.dashboard', tab='manutencoes') }}"
+     class="cfg-tab {{ 'cfg-tab-active' if tab == 'manutencoes' else '' }}">
+    <i class="fa-solid fa-screwdriver-wrench menu-icon-manutencao"></i> Manutenções
+  </a>
+  {% endif %}
+</div>
+
+{% if tab == 'tickets' %}
 <!-- CARDS DE STATS -->
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-4 col-xl-2">
@@ -175,4 +190,171 @@
     {% endif %}
   </div>
 </div>
+
+{% else %}
+<!-- CARDS DE STATS — MANUTENÇÕES -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-xl-2">
+    <a href="{{ url_for('manutencao.manutencoes') }}" class="stat-card stat-total">
+      <div class="stat-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+      <div class="stat-number">{{ manut_stats.total }}</div>
+      <div class="stat-label">Total</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <a href="{{ url_for('manutencao.manutencoes', status='Aberta') }}" class="stat-card stat-aberto">
+      <div class="stat-icon"><i class="fa-solid fa-folder-open"></i></div>
+      <div class="stat-number">{{ manut_stats.aberta }}</div>
+      <div class="stat-label">Abertas</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <a href="{{ url_for('manutencao.manutencoes', status='Em Andamento') }}" class="stat-card stat-andamento">
+      <div class="stat-icon"><i class="fa-solid fa-arrows-rotate"></i></div>
+      <div class="stat-number">{{ manut_stats.em_andamento }}</div>
+      <div class="stat-label">Em Andamento</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <a href="{{ url_for('manutencao.manutencoes', status='Concluída') }}" class="stat-card stat-concluida">
+      <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="stat-number">{{ manut_stats.concluida }}</div>
+      <div class="stat-label">Concluídas</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <a href="{{ url_for('manutencao.manutencoes', status='Cancelada') }}" class="stat-card stat-cancelada">
+      <div class="stat-icon"><i class="fa-solid fa-ban"></i></div>
+      <div class="stat-number">{{ manut_stats.cancelada }}</div>
+      <div class="stat-label">Canceladas</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="stat-card stat-novo">
+      <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+      <div class="stat-number" style="font-size:20px">R$ {{ '%.2f' | format(manut_stats.valor_total) | replace('.', ',') }}</div>
+      <div class="stat-label">Valor Total</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- MANUTENÇÕES RECENTES -->
+  <div class="col-lg-8">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-clock-rotate-left"></i> Manutenções Recentes</h5>
+        <a href="{{ url_for('manutencao.manutencoes') }}" class="btn-ver-todos">Ver todos</a>
+      </div>
+      {% if manut_recentes %}
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nº</th>
+              <th>Equipamento</th>
+              <th>Unidade</th>
+              <th>Status</th>
+              <th>Data</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in manut_recentes %}
+            <tr>
+              <td><span class="manutencao-num">{{ m.numero }}</span></td>
+              <td class="ticket-nome">{{ m.equipamento_nome }}</td>
+              <td>{{ m.unidade }}</td>
+              <td><span class="badge-status badge-{{ m.status | lower | replace(' ', '-') }}">{{ m.status }}</span></td>
+              <td class="text-muted small">{{ m.data_formatada }}</td>
+              <td>
+                <a href="{{ url_for('manutencao.ver_manutencao', manutencao_id=m.id) }}" class="btn-acao">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-screwdriver-wrench"></i>
+        <p>Nenhuma manutenção encontrada</p>
+        {% if session.role == 'admin' or 'manutencao_gerenciar' in g_permissoes %}
+        <a href="{{ url_for('manutencao.nova_manutencao') }}" class="btn-primary-sm">Abrir primeira manutenção</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- UNIDADES -->
+  <div class="col-lg-4">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-store"></i> Por Unidade</h5>
+      </div>
+      <div class="sistemas-list">
+        {% for unidade, count in unidades_stats.items() %}
+        <div class="sistema-item">
+          <div class="sistema-info">
+            <span class="sistema-dot"></span>
+            <span class="sistema-nome">{{ unidade }}</span>
+          </div>
+          <span class="sistema-count">{{ count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if session.role == 'admin' or 'manutencao_ver' in g_permissoes %}
+    <div class="card-panel mt-3">
+      <div class="card-panel-header">
+        <h5><i class="fa-solid fa-chart-bar"></i> Distribuição</h5>
+      </div>
+      <div class="dist-bars">
+        {% set total_m = manut_stats.total if manut_stats.total > 0 else 1 %}
+        <div class="dist-item">
+          <div class="dist-label">
+            <span>Abertas</span>
+            <span>{{ manut_stats.aberta }}</span>
+          </div>
+          <div class="dist-bar">
+            <div class="dist-fill fill-aberto" style="width: {{ (manut_stats.aberta / total_m * 100) | int }}%"></div>
+          </div>
+        </div>
+        <div class="dist-item">
+          <div class="dist-label">
+            <span>Em Andamento</span>
+            <span>{{ manut_stats.em_andamento }}</span>
+          </div>
+          <div class="dist-bar">
+            <div class="dist-fill fill-andamento" style="width: {{ (manut_stats.em_andamento / total_m * 100) | int }}%"></div>
+          </div>
+        </div>
+        <div class="dist-item">
+          <div class="dist-label">
+            <span>Concluídas</span>
+            <span>{{ manut_stats.concluida }}</span>
+          </div>
+          <div class="dist-bar">
+            <div class="dist-fill fill-concluida" style="width: {{ (manut_stats.concluida / total_m * 100) | int }}%"></div>
+          </div>
+        </div>
+        <div class="dist-item">
+          <div class="dist-label">
+            <span>Canceladas</span>
+            <span>{{ manut_stats.cancelada }}</span>
+          </div>
+          <div class="dist-bar">
+            <div class="dist-fill fill-cancelada" style="width: {{ (manut_stats.cancelada / total_m * 100) | int }}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 {% endblock %}

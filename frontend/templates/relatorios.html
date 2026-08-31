@@ -124,7 +124,7 @@
         <tbody>
           {% for m in manutencoes %}
           <tr onclick="window.location='{{ url_for('manutencao.ver_manutencao', manutencao_id=m.id) }}'" style="cursor:pointer">
-            <td><span class="ticket-num">{{ m.numero }}</span></td>
+            <td><span class="manutencao-num">{{ m.numero }}</span></td>
             <td>{{ m.equipamento_nome }}</td>
             <td>{{ m.unidade }}</td>
             <td>

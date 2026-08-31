@@ -90,7 +90,7 @@ def get_default_config():
     return {
         'ip_control': {
             'enabled': False,
-            'ips': ['127.0.0.1', '::1']
+            'ips': [{'ip': '127.0.0.1', 'nome': ''}, {'ip': '::1', 'nome': ''}]
         },
         'horario_control': {
             'enabled': False,
@@ -106,6 +106,7 @@ def get_default_config():
         },
         'sistemas': ['Teknisa', 'Kdápio (Callcenter)', 'Lumia', 'iFood'],
         'unidades': [],
+        'tecnicos': [],
         'personalizacao': {
             'cor_botao':          '#111111',
             'cor_botao_light':    '#f0f0f0',
@@ -152,6 +153,10 @@ def get_sistemas():
 
 def get_unidades():
     return load_config().get('unidades', [])
+
+
+def get_tecnicos():
+    return load_config().get('tecnicos', [])
 
 
 def get_ticket_stats():

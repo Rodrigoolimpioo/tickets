@@ -74,7 +74,7 @@
       <tbody>
         {% for m in manutencoes %}
         <tr onclick="window.location='{{ url_for('manutencao.ver_manutencao', manutencao_id=m.id) }}'" style="cursor:pointer">
-          <td><span class="ticket-num">{{ m.numero }}</span></td>
+          <td><span class="manutencao-num">{{ m.numero }}</span></td>
           <td>
             <div class="ticket-nome">{{ m.equipamento_nome }}</div>
             <div class="ticket-ocorrencia-preview">{{ m.descricao[:80] }}{% if m.descricao | length > 80 %}...{% endif %}</div>

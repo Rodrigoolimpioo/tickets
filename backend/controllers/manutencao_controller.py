@@ -65,6 +65,8 @@ def nova_manutencao():
         unidade        = request.form.get('unidade', '').strip()
         descricao      = request.form.get('descricao', '').strip()
         responsavel_id = request.form.get('responsavel_id', '') or None
+        tecnico        = request.form.get('tecnico', '').strip()
+        empresa        = request.form.get('empresa', '').strip()
 
         equipamento = next((e for e in equipamentos if e['id'] == equipamento_id), None)
         if not equipamento or not unidade or not descricao:
@@ -97,6 +99,8 @@ def nova_manutencao():
                 'foto_equipamento': foto_info,
                 'valor': None,
                 'servico_feito': '',
+                'tecnico': tecnico,
+                'empresa': empresa,
                 'historico': [{'acao': 'Manutenção aberta', 'por': session['name'],
                                'data': now.strftime('%d/%m/%Y %H:%M:%S')}],
             }
@@ -108,7 +112,7 @@ def nova_manutencao():
             return redirect(url_for('manutencao.ver_manutencao', manutencao_id=manutencao['id']))
 
     return render_template('abrir_manutencao.html', equipamentos=equipamentos, usuarios=usuarios,
-                           unidades=storage.get_unidades(), error=error)
+                           unidades=storage.get_unidades(), tecnicos=storage.get_tecnicos(), error=error)
 
 
 @manutencao_bp.route('/manutencao/<manutencao_id>')

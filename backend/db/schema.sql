@@ -80,7 +80,10 @@ CREATE TABLE CONFIG_GERAL (
 );
 
 CREATE TABLE IPS_PERMITIDOS (
-    IP  VARCHAR2(45) PRIMARY KEY
+    IP    VARCHAR2(45)  PRIMARY KEY,
+    -- Identificação opcional (ex.: "Escritório", "Casa do Rodrigo") só
+    -- pra facilitar reconhecer a lista depois — não afeta a checagem.
+    NOME  VARCHAR2(100)
 );
 
 -- Um toggle por status de ticket (ver core/config.STATUS_LIST) definindo
@@ -107,6 +110,13 @@ CREATE TABLE SISTEMAS (
 
 CREATE TABLE UNIDADES (
     NOME VARCHAR2(100) PRIMARY KEY
+);
+
+-- Cadastro prévio de técnicos externos — mesmo padrão sem FK de
+-- SISTEMAS/UNIDADES, usado como opções padrão no campo "Técnico" da
+-- manutenção (ver MANUTENCOES.TECNICO abaixo).
+CREATE TABLE TECNICOS (
+    NOME VARCHAR2(200) PRIMARY KEY
 );
 
 -- Taxonomia fixa de tipos de equipamento (semeada em migrate.py a partir
@@ -152,7 +162,11 @@ CREATE TABLE MANUTENCOES (
     FOTO_FILENAME       VARCHAR2(500),
     FOTO_ORIGINAL_NAME  VARCHAR2(500),
     VALOR               NUMBER(10,2),
-    SERVICO_FEITO       VARCHAR2(2000 CHAR)
+    SERVICO_FEITO       VARCHAR2(2000 CHAR),
+    -- Técnico/empresa terceirizada que executou o serviço — texto livre,
+    -- diferente de RESPONSAVEL (usuário interno do sistema).
+    TECNICO             VARCHAR2(200),
+    EMPRESA             VARCHAR2(200)
 );
 
 CREATE TABLE MANUTENCAO_HISTORICO (

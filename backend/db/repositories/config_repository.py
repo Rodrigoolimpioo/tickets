@@ -15,8 +15,8 @@ def get_config() -> dict:
         )
         geral = rows_to_dicts(cursor)
 
-        cursor.execute("SELECT IP FROM IPS_PERMITIDOS ORDER BY IP")
-        ips = [r['ip'] for r in rows_to_dicts(cursor)]
+        cursor.execute("SELECT IP, NOME FROM IPS_PERMITIDOS ORDER BY IP")
+        ips = [{'ip': r['ip'], 'nome': r['nome'] or ''} for r in rows_to_dicts(cursor)]
 
         cursor.execute(
             "SELECT DIA, NOME, INICIO, FIM, ATIVO FROM HORARIOS_CONTROLE ORDER BY DIA"
@@ -33,6 +33,9 @@ def get_config() -> dict:
         cursor.execute("SELECT NOME FROM UNIDADES ORDER BY NOME")
         unidades = [r['nome'] for r in rows_to_dicts(cursor)]
 
+        cursor.execute("SELECT NOME FROM TECNICOS ORDER BY NOME")
+        tecnicos = [r['nome'] for r in rows_to_dicts(cursor)]
+
         cursor.execute("SELECT STATUS, ATIVO, MENSAGEM FROM WHATSAPP_STATUS_CONFIG")
         wpp_rows = rows_to_dicts(cursor)
         status_ativo = {r['status']: bool(r['ativo']) for r in wpp_rows}
@@ -44,6 +47,7 @@ def get_config() -> dict:
         'horario_control': {'enabled': bool(g['horario_control_enabled']), 'horarios': horarios},
         'sistemas': sistemas,
         'unidades': unidades,
+        'tecnicos': tecnicos,
         'personalizacao': {
             'cor_botao': g['cor_botao'],
             'cor_botao_light': g['cor_botao_light'],
@@ -104,8 +108,11 @@ def save_config(cfg: dict) -> None:
     with get_cursor(commit=True) as cursor:
         cursor.execute("DELETE FROM IPS_PERMITIDOS")
     with get_cursor(commit=True) as cursor:
-        for ip in cfg['ip_control']['ips']:
-            cursor.execute("INSERT INTO IPS_PERMITIDOS (IP) VALUES (:ip)", ip=ip)
+        for item in cfg['ip_control']['ips']:
+            cursor.execute(
+                "INSERT INTO IPS_PERMITIDOS (IP, NOME) VALUES (:ip, :nome)",
+                ip=item['ip'], nome=item.get('nome') or None,
+            )
 
     with get_cursor(commit=True) as cursor:
         for h in cfg['horario_control']['horarios']:
@@ -149,5 +156,11 @@ def save_config(cfg: dict) -> None:
     with get_cursor(commit=True) as cursor:
         for unidade in cfg.get('unidades', []):
             cursor.execute("INSERT INTO UNIDADES (NOME) VALUES (:nome)", nome=unidade)
+
+    with get_cursor(commit=True) as cursor:
+        cursor.execute("DELETE FROM TECNICOS")
+    with get_cursor(commit=True) as cursor:
+        for tecnico in cfg.get('tecnicos', []):
+            cursor.execute("INSERT INTO TECNICOS (NOME) VALUES (:nome)", nome=tecnico)
 
     perfis_repository.save_perfis(cfg.get('perfis', []))
