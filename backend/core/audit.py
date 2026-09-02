@@ -28,17 +28,19 @@ ACOES = [
 
 
 def log_evento(acao: str, detalhes: str = None, entidade_tipo: str = None,
-                entidade_id: str = None, usuario_id: str = None, usuario_nome: str = None) -> None:
-    """Registra um evento de auditoria. Usa a sessão atual como autor por
-    padrão (usuario_id/usuario_nome só precisam ser passados explicitamente
-    em casos sem sessão ainda montada, como uma tentativa de login)."""
+                entidade_id: str = None, usuario_id: str = None, usuario_nome: str = None,
+                ip: str = None) -> None:
+    """Registra um evento de auditoria. Usa a sessão/request atual como autor
+    por padrão (usuario_id/usuario_nome/ip só precisam ser passados
+    explicitamente em casos sem contexto de request, como uma tentativa de
+    login ou uma notificação disparada numa thread em segundo plano)."""
     logs_repository.registrar(
         acao=acao,
         quando=get_brasilia_time(),
         usuario_id=usuario_id if usuario_id is not None else session.get('user_id'),
         usuario_nome=usuario_nome if usuario_nome is not None else session.get('name'),
         detalhes=detalhes,
-        ip=get_client_ip(),
+        ip=ip if ip is not None else get_client_ip(),
         entidade_tipo=entidade_tipo,
         entidade_id=entidade_id,
     )

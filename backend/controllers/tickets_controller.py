@@ -1,4 +1,5 @@
 import os
+import threading
 import uuid
 
 from flask import Blueprint, redirect, render_template, request, session, url_for
@@ -9,7 +10,7 @@ from core.audit import log_evento
 from core.config import HISTORICO_ACAO_MAX, STATUS_LIST, STATUS_TICKET_FECHADOS, UPLOADS_DIR
 from core.security import login_required, permission_required, role_required
 from core.services import whatsapp_service
-from core.time_utils import get_brasilia_time
+from core.time_utils import get_brasilia_time, get_client_ip
 
 tickets_bp = Blueprint('tickets', __name__)
 
@@ -66,7 +67,15 @@ def abrir_ticket():
                 storage.save_tickets(tickets)
                 log_evento('ticket_criado', detalhes=f"{ticket['numero']} — {nome}",
                            entidade_tipo='ticket', entidade_id=ticket['id'])
-                whatsapp_service.notificar_ticket_aberto(ticket)
+                # Em thread separada: enviar WhatsApp pra vários admins é
+                # lento (cada envio bate no wa-service via túnel SSH) e não
+                # pode travar a resposta HTTP até estourar 504 no proxy —
+                # o ticket já foi salvo, a notificação é best-effort.
+                threading.Thread(
+                    target=whatsapp_service.notificar_ticket_aberto,
+                    args=(ticket, session['user_id'], session['name'], get_client_ip()),
+                    daemon=True,
+                ).start()
                 return redirect(url_for('tickets.ver_ticket', ticket_id=ticket['id']))
 
     return render_template('abrir_ticket.html', sistemas=storage.get_sistemas(),
@@ -139,7 +148,13 @@ def atualizar_ticket(ticket_id):
         storage.save_tickets(tickets)
         log_evento('ticket_atualizado', detalhes=f"{ticket['numero']} — {entrada}",
                    entidade_tipo='ticket', entidade_id=ticket_id)
-        whatsapp_service.notificar_status_ticket(ticket, novo_status, comentario, session['name'])
+        # Mesmo motivo do threading em abrir_ticket: pode notificar vários
+        # supervisores em sequência, e isso não pode travar essa resposta.
+        threading.Thread(
+            target=whatsapp_service.notificar_status_ticket,
+            args=(ticket, novo_status, comentario, session['name'], session['user_id'], get_client_ip()),
+            daemon=True,
+        ).start()
     return redirect(url_for('tickets.ver_ticket', ticket_id=ticket_id))
 
 

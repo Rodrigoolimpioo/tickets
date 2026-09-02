@@ -73,25 +73,33 @@ def _config_status(novo_status: str):
     return ativo, template
 
 
-def _enviar_e_logar(ticket: dict, telefone: str, destinatario: str, mensagem: str) -> None:
+def _enviar_e_logar(ticket: dict, telefone: str, destinatario: str, mensagem: str,
+                     usuario_id: str, usuario_nome: str, ip: str) -> None:
     """Envia e sempre registra o resultado em LOGS_AUDITORIA — toda
     comunicação por WhatsApp (sucesso ou falha) fica auditável, com o
-    ticket, o destinatário e o número usado."""
+    ticket, o destinatário e o número usado. usuario_id/usuario_nome/ip
+    vêm explícitos (não de session/request) porque isso roda numa thread
+    em segundo plano, sem contexto de request — ver notificar_*."""
     ok = enviar_whatsapp(telefone, mensagem)
     log_evento(
         'whatsapp_enviado' if ok else 'whatsapp_falhou',
         detalhes=f"Ticket {ticket['numero']} → {destinatario} ({telefone})",
         entidade_tipo='ticket', entidade_id=ticket['id'],
+        usuario_id=usuario_id, usuario_nome=usuario_nome, ip=ip,
     )
 
 
-def notificar_ticket_aberto(ticket: dict) -> None:
+def notificar_ticket_aberto(ticket: dict, usuario_id: str, usuario_nome: str, ip: str) -> None:
     """Dispara para todo admin ativo com telefone cadastrado, gatilhado
     pelo toggle do status 'Aberto'. A {comentario} do template, aqui,
     recebe a descrição da ocorrência (não há comentário de resposta ainda
     nesse ponto do fluxo). A mensagem inclui um link direto pro ticket —
     login sem sessão ativa redireciona de volta pra cá depois de logar
-    (ver core.security.safe_next_path)."""
+    (ver core.security.safe_next_path).
+
+    Chamado pelo controller numa thread em segundo plano (enviar pra vários
+    números é lento e não pode travar a resposta HTTP) — por isso recebe o
+    autor/IP explícitos em vez de ler session/request."""
     ativo, template = _config_status('Aberto')
     if not ativo:
         return
@@ -104,16 +112,22 @@ def notificar_ticket_aberto(ticket: dict) -> None:
     mensagem = _montar_mensagem(ticket, 'Aberto', ticket.get('ocorrencia', ''),
                                  ticket.get('criado_por', ''), template)
     for admin in admins:
-        _enviar_e_logar(ticket, admin['telefone'], f"{admin['name']} (admin)", mensagem)
+        _enviar_e_logar(ticket, admin['telefone'], f"{admin['name']} (admin)", mensagem,
+                         usuario_id, usuario_nome, ip)
 
 
-def notificar_status_ticket(ticket: dict, novo_status: str, comentario: str, atualizado_por: str) -> None:
+def notificar_status_ticket(ticket: dict, novo_status: str, comentario: str, atualizado_por: str,
+                             usuario_id: str, ip: str) -> None:
     """Dispara para quem abriu o ticket (só se for supervisor ou
     funcionário) e sempre para todos os supervisores ativos com telefone —
     administrador não recebe notificação de resposta (só a de abertura,
     via notificar_ticket_aberto). Um mesmo telefone nunca recebe duas
     mensagens (ex.: supervisor que abriu o próprio ticket) — o dict abaixo
-    dedupa por telefone mantendo um rótulo pro log."""
+    dedupa por telefone mantendo um rótulo pro log.
+
+    Chamado pelo controller numa thread em segundo plano (mesmo motivo de
+    notificar_ticket_aberto) — usuario_id/ip vêm explícitos; atualizado_por
+    já serve de nome do autor pro log."""
     ativo, template = _config_status(novo_status)
     if not ativo:
         return
@@ -135,4 +149,5 @@ def notificar_status_ticket(ticket: dict, novo_status: str, comentario: str, atu
 
     mensagem = _montar_mensagem(ticket, novo_status, comentario, atualizado_por, template)
     for telefone, destinatario in destinatarios.items():
-        _enviar_e_logar(ticket, telefone, destinatario, mensagem)
+        _enviar_e_logar(ticket, telefone, destinatario, mensagem,
+                         usuario_id, atualizado_por, ip)
