@@ -5,7 +5,7 @@ set -e
 
 APP_DIR="/home/ubuntu/tickets"
 BACKEND_DIR="$APP_DIR/backend"
-VENV="$APP_DIR/venv"
+VENV="$BACKEND_DIR/venv"
 
 echo "=== Atualizando código ==="
 cd "$APP_DIR"
