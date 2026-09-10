@@ -18,7 +18,7 @@ config_bp = Blueprint('config', __name__)
 @login_required
 @role_required('admin')
 def configuracoes():
-    users        = storage.load_users()
+    users        = sorted(storage.load_users(), key=lambda u: u.get('name', '').lower())
     cfg          = storage.load_config()
     ticket_stats = storage.get_ticket_stats()
     tab          = request.args.get('tab', 'usuarios')
