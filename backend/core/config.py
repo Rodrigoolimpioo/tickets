@@ -167,9 +167,9 @@ EQUIPAMENTO_TIPOS_PADRAO = {
 }
 
 # ── WhatsApp (notificação de andamento de ticket via wa-service) ─────
-# Serviço interno próprio (whatsapp-web.js), repositório separado
-# (github.com/JuanDiniz/wa-service). Roda na mesma VM, escutando só em
-# 127.0.0.1 — nunca é exposto à internet. Substituiu o Z-API (trial
-# expirado, inviável pago pro volume de mensagens do projeto).
-WA_SERVICE_URL = os.environ.get('WA_SERVICE_URL', 'http://127.0.0.1:3000')
+# Serviço próprio (whatsapp-web.js), repositório separado
+# (github.com/JuanDiniz/wa-service). Roda em Docker no Portainer da CBM
+# Informática, exposto em HTTPS — a API key é a única proteção. Substituiu
+# o Z-API (trial expirado, inviável pago pro volume de mensagens do projeto).
+WA_SERVICE_URL = os.environ.get('WA_SERVICE_URL', 'https://app-supre.cbminformatica.com.br')
 WA_SERVICE_API_KEY = os.environ.get('WA_SERVICE_API_KEY')

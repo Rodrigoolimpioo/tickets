@@ -68,7 +68,7 @@ def abrir_ticket():
                 log_evento('ticket_criado', detalhes=f"{ticket['numero']} — {nome}",
                            entidade_tipo='ticket', entidade_id=ticket['id'])
                 # Em thread separada: enviar WhatsApp pra vários admins é
-                # lento (cada envio bate no wa-service via túnel SSH) e não
+                # lento (cada envio bate no wa-service pela internet) e não
                 # pode travar a resposta HTTP até estourar 504 no proxy —
                 # o ticket já foi salvo, a notificação é best-effort.
                 threading.Thread(

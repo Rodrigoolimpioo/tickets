@@ -1,6 +1,6 @@
 """Envio de mensagem via WhatsApp usando o wa-service interno
-(github.com/JuanDiniz/wa-service, whatsapp-web.js), que roda na mesma VM
-escutando só em 127.0.0.1.
+(github.com/JuanDiniz/wa-service, whatsapp-web.js), que roda em Docker no
+Portainer da CBM Informática (https://app-supre.cbminformatica.com.br).
 
 Mesmo contrato de sempre: nunca lança para o chamador em caso de falha —
 loga o erro e retorna False, porque a atualização do ticket sempre deve
